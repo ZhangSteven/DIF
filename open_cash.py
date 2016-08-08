@@ -42,12 +42,14 @@ def open_excel(file_name):
 			ws = wb.sheet_by_name(sn)
 			read_cash(ws, port_values)
 
+	# show cash accounts
 	cash_accounts = port_values['cash_accounts']
 
-	for account_num in cash_accounts:
-		cash_account = cash_accounts[account_num]		# use account_number as key
+	for id in cash_accounts:
+		cash_account = cash_accounts[id]	# use account_number as key
 		
 		bank = cash_account['bank']			# retrieve bank name
+		account_num = cash_account['account_num']	# retrieve account number
 		# date = cash_account['date']			# retrieve date
 		balance = cash_account['balance']	# retrieve balance
 		currency = cash_account['currency']	# retrieve currency
@@ -63,14 +65,15 @@ def read_cash(ws, port_values, datemode=0):
 
 	cash_accounts = port_values['cash_accounts']	# get all cash accounts
 
-	for account_num in cash_accounts:
-		cash_account = cash_accounts[account_num]		# use account_number as key
+	for id in cash_accounts:
+		cash_account = cash_accounts[id]	# use integer as key
 		
 		bank = cash_account['bank']			# retrieve bank name
+		account_num = cash_account['account_num']	# retrieve account number
 		date = cash_account['date']			# retrieve date
 		balance = cash_account['balance']	# retrieve balance
 		currency = cash_account['currency']	# retrieve currency
-		type = cash_account['type']			# retrieve account type
+		account_type = cash_account['account_type']	# retrieve account type
 		fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
 		HKD_equivelant = cash_account['HKD_equivelant']	# retrieve amount in HKD
 		
@@ -93,7 +96,11 @@ def read_cash(ws, port_values, datemode=0):
 		else:
 			return ws.cell_value(row, 1)
 
+	# to store cash account information read from this worksheet
 	this_account = {}
+	id = len(cash_accounts.keys()) + 1
+	cash_accounts[id] = this_account
+
 	for row in range(ws.nrows):
 				
 			# search the first column
@@ -105,13 +112,8 @@ def read_cash(ws, port_values, datemode=0):
 					this_account['bank'] = get_value(row)
 
 				elif len(cell_value) > 11 and cell_value[:11] == 'Account No.':
-					account_num = get_value(row)
-					if account_num in cash_accounts:
-						# account number exists, but it should be unique
-						raise ValueError('account number {0} already exists.'.format(account_num))
-
-					cash_accounts[account_num] = this_account
-
+					this_account['account_num'] = get_value(row)
+					
 				elif len(cell_value) > 16 and cell_value[:16] == 'Account Currency':
 					this_account['currency'] = get_value(row)
 
