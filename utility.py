@@ -9,23 +9,6 @@ import os
 
 
 
-# Initialization
-# if not 'configs' in globals():
-#     configs = {}
-#     parse_config('config.txt', configs)
-#     log_lvl = configs['loglevel']
-#     if log_lvl == 'debug':
-#         log_lvl = logging.DEBUG
-#     elif log_lvl == 'info':
-#         log_lvl = logging.INFO
-#     elif log_lvl == 'warn':
-#         log_lvl = logging.WARN
-#     else:
-#         log_lvl = logging.DEBUG
-#     logger = my_custom_logger('main', configs['logfile'], log_lvl)
-#     logger.info('stockapp started')
-
-
 def get_current_path():
 	"""
 	Get the absolute path to the directory where this module is in.
@@ -40,9 +23,9 @@ def get_current_path():
 
 def _load_config(filename='config'):
 	"""
-	Read the global config file, convert it to a config object. The config file
-	is supposed to be located in the same directory as the py files, and named
-	as "dif.config".
+	Read the config file, convert it to a config object. The config file is 
+	supposed to be located in the same directory as the py files, and the
+	default name is "config".
 
 	Caution: uncaught exceptions will happen if the config files are missing
 	or named incorrectly.
@@ -82,7 +65,6 @@ def convert_log_level(log_level):
 
 
 
-# def _create_logger(name, filename, loglevel):
 def _create_logger():
     """ 
     Creates a logger based on the python logging package. Supposed to be 

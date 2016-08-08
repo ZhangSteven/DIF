@@ -62,5 +62,3 @@ def open_excel(file_name):
 
 	# verify we have read the correct value
 	open_cash.show_cash_accounts(port_values)
-
-	

@@ -80,6 +80,10 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 				raise TypeError('read_portfolio_summary():cell {0},{1} not a valid date: {2}'
 									.format(row, 1, cell_value))
 
+		elif ():
+
+
+			
 	logger.log(logging.DEBUG, 'out of read_portfolio_summary()')
 
 
