@@ -22,7 +22,8 @@
 # 
 
 from xlrd import open_workbook
-from DIF import open_cash, open_summary
+from DIF.open_cash import read_cash, show_cash_accounts
+from DIF.open_summary import read_portfolio_summary, show_portfolio_summary
 
 
 
@@ -42,23 +43,26 @@ def open_excel(file_name):
 	# read portfolio summary
 	try:
 		ws = wb.sheet_by_name('Portfolio Sum.')
-		open_summary.read_portfolio_summary(ws, port_values)
+		read_portfolio_summary(ws, port_values)
 	except Exception as e:
 		# do some logging here
 		raise
 
+	# verify we have read the correct value
+	show_portfolio_summary(port_values)
+
 	# read cash accounts
 	sheet_names = wb.sheet_names()
 	for sn in sheet_names:
-		if len(sn) > 4 and sn[-4:] == '-BOC':
+		if sn.endswith('-BOC'):
 			# print('read from sheet {0}'.format(sn))
 			ws = wb.sheet_by_name(sn)
 
 			try:
-				open_cash.read_cash(ws, port_values)
+				read_cash(ws, port_values)
 			except Exception as e:
 				# do some logging here
 				raise
 
 	# verify we have read the correct value
-	open_cash.show_cash_accounts(port_values)
+	show_cash_accounts(port_values)

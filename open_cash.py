@@ -7,7 +7,8 @@
 from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
-import datetime
+import datetime, logging
+from DIF.utility import logger
 
 
 
@@ -52,6 +53,8 @@ def read_cash(ws, port_values, datemode=0):
 		HKD_equivalent = cash_account['hkd_equivalent']	# retrieve amount in HKD
 		
 	"""
+	logger.log(logging.DEBUG, 'in read_cash()')
+
 	if 'cash_accounts' in port_values:
 		cash_accounts = port_values['cash_accounts']
 	else:
@@ -82,56 +85,33 @@ def read_cash(ws, port_values, datemode=0):
 		cell_type = ws.cell_type(row, 0)
 
 		if (isinstance(cell_value, str)):
-			# if len(cell_value) > 4 and cell_value[:4] == 'Bank':
-			# 	this_account['bank'] = get_value(row)
-
-			# elif len(cell_value) > 11 and cell_value[:11] == 'Account No.':
-			# 	this_account['account_num'] = get_value(row)
-
-			# elif len(cell_value) > 12 and cell_value[:12] == 'Account Type':
-			# 	this_account['account_type'] = get_value(row)
-				
-			# elif len(cell_value) > 16 and cell_value[:16] == 'Valuation Period':
-			# 	date_string = get_value(row, 2)
-			# 	this_account['date'] = xldate_as_datetime(date_string, datemode)
-
-			# elif len(cell_value) > 16 and cell_value[:16] == 'Account Currency':
-			# 	this_account['currency'] = get_value(row)
-
-			# elif len(cell_value) > 15 and cell_value[:15] == 'Account Balance':
-			# 	this_account['balance'] = get_value(row)
-
-			# elif len(cell_value) > 13 and cell_value[:13] == 'Exchange Rate':
-			# 	this_account['fx_rate'] = get_value(row)
-
-			# elif len(cell_value) > 9 and cell_value[:9] == 'HKD Equiv':
-			# 	this_account['hkd_equivalent'] = get_value(row)
 
 			if cell_value.startswith('Bank'):
 				this_account['bank'] = get_value(row)
 
-			elif len(cell_value) > 11 and cell_value[:11] == 'Account No.':
+			elif cell_value.startswith('Account No.'):
 				this_account['account_num'] = get_value(row)
 
-			elif len(cell_value) > 12 and cell_value[:12] == 'Account Type':
+			elif cell_value.startswith('Account Type'):
 				this_account['account_type'] = get_value(row)
 				
-			elif len(cell_value) > 16 and cell_value[:16] == 'Valuation Period':
+			elif cell_value.startswith('Valuation Period'):
 				date_string = get_value(row, 2)
 				this_account['date'] = xldate_as_datetime(date_string, datemode)
 
-			elif len(cell_value) > 16 and cell_value[:16] == 'Account Currency':
+			elif cell_value.startswith('Account Currency'):
 				this_account['currency'] = get_value(row)
 
-			elif len(cell_value) > 15 and cell_value[:15] == 'Account Balance':
+			elif cell_value.startswith('Account Balance'):
 				this_account['balance'] = get_value(row)
 
-			elif len(cell_value) > 13 and cell_value[:13] == 'Exchange Rate':
+			elif cell_value.startswith('Exchange Rate'):
 				this_account['fx_rate'] = get_value(row)
 
-			elif len(cell_value) > 9 and cell_value[:9] == 'HKD Equiv':
+			elif cell_value.startswith('HKD Equiv'):
 				this_account['hkd_equivalent'] = get_value(row)
 
+	logger.log(logging.DEBUG, 'out of read_cash()')
 
 
 def show_cash_accounts(port_values):

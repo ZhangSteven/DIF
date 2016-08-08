@@ -55,6 +55,7 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 	"""
 	logger.log(logging.DEBUG, 'in read_portfolio_summary()')
 
+	count = 0
 	for row in range(ws.nrows):
 			
 		# search the first column
@@ -76,15 +77,52 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 				d = xldate_as_datetime(cell_value, datemode)
 				port_values['date'] = d
 
-			else:							
-				raise TypeError('read_portfolio_summary():cell {0},{1} not a valid date: {2}'
-									.format(row, 1, cell_value))
+			else:
+				logger.log(logging.ERROR, 'cell {0},1 is not a valid date: {1}'
+							.format(row, cell_value))
+				raise ValueError()
 
-		elif ():
+		elif (cell_value.startswith('Total Units Held at this Valuation  Date')):
+			cell_value = ws.cell_value(row, 2)	# read value at column C
+			populate_value(port_values, 'number_of_units', cell_value, row, 2)
 
+		elif (cell_value.startswith('Unit Price')):
+			if count == 0:
+				# there are two cells in column A that shows 'Unit Price',
+				# but only the second cell contains the right value (after
+				# performance fee)
+				count = count + 1
+			else:
+				cell_value = ws.cell_value(row, 2)	# read value at column C
+				populate_value(port_values, 'unit_price', cell_value, row, 2)
 
+		elif (cell_value == 'Net Asset Value'):
+			cell_value = ws.cell_value(row, 9)
+			populate_value(port_values, 'nav', cell_value, row, 9)
 			
 	logger.log(logging.DEBUG, 'out of read_portfolio_summary()')
+
+
+
+
+def populate_value(port_values, key, cell_value, row, column):
+	"""
+	For the number of units, nav and unit price, they have the same validation
+	process, so we put it here.
+
+	If cell_value is valid, assign it to the port_values dictionary. Otherwise
+	throw an ValueError exception with the msg to indicate something is wrong.
+	"""
+	logger.log(logging.DEBUG, 'in populate_value()')
+
+	if (isinstance(cell_value, float)) and cell_value > 0:
+		port_values[key] = cell_value
+	else:
+		logger.log(logging.ERROR, 'cell {0},{1} is not a valid {2}: {3}'
+					.format(row, column, key, cell_value))
+		raise ValueError()
+
+	logger.log(logging.DEBUG, 'out of populate_value()')
 
 
 
@@ -97,3 +135,7 @@ def show_portfolio_summary(port_values):
 			print('nav = {0}'.format(port_values['nav']))
 		elif key == 'date':
 			print('date = {0}'.format(port_values['date']))
+		elif key == 'number_of_units':
+			print('number_of_units = {0}'.format(port_values['number_of_units']))
+		elif key == 'unit_price':
+			print('unit_price = {0}'.format(port_values['unit_price']))

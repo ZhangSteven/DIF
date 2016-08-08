@@ -32,7 +32,7 @@ def _load_config(filename='config'):
 	"""
 	path = get_current_path()
 	config_file = path + '\\' + filename
-	print(config_file)
+	# print(config_file)
 	cfg = configparser.ConfigParser()
 	cfg.read(config_file)
 	return cfg
