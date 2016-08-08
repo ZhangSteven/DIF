@@ -23,6 +23,7 @@ from xlrd import open_workbook
 from xlrd import XL_CELL_EMPTY, XL_CELL_DATE, XL_CELL_ERROR, XL_CELL_BLANK
 from xlrd.xldate import xldate_as_datetime
 import xlrd
+import datetime
 
 
 
@@ -50,13 +51,16 @@ def open_excel(file_name):
 		
 		bank = cash_account['bank']			# retrieve bank name
 		account_num = cash_account['account_num']	# retrieve account number
-		# date = cash_account['date']			# retrieve date
+		date = cash_account['date']			# retrieve date
 		balance = cash_account['balance']	# retrieve balance
 		currency = cash_account['currency']	# retrieve currency
-		# type = cash_account['type']			# retrieve account type
-		# fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
-		# HKD_equivelant = cash_account['HKD_equivelant']	# retrieve amount in HKD
-		print(account_num, currency, balance)
+		account_type = cash_account['account_type']			# retrieve account type
+		fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
+		HKD_equivelant = cash_account['hkd_equivalent']	# retrieve amount in HKD
+		print(bank, date, account_num, account_type, currency, 
+				balance, fx_rate, HKD_equivelant)
+
+
 
 def read_cash(ws, port_values, datemode=0):
 	"""
@@ -75,7 +79,7 @@ def read_cash(ws, port_values, datemode=0):
 		currency = cash_account['currency']	# retrieve currency
 		account_type = cash_account['account_type']	# retrieve account type
 		fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
-		HKD_equivelant = cash_account['HKD_equivelant']	# retrieve amount in HKD
+		HKD_equivalent = cash_account['hkd_equivalent']	# retrieve amount in HKD
 		
 	"""
 	if 'cash_accounts' in port_values:
@@ -84,17 +88,17 @@ def read_cash(ws, port_values, datemode=0):
 		cash_accounts = {}
 		port_values['cash_accounts'] = cash_accounts
 
-	def get_value(row):
+	def get_value(row, column=1):
 		"""
 		Define this local function to retrieve value for each property of
 		a cash account, the information is either in column B or C.
 		"""
-		cell_type = ws.cell_type(row, 1)
+		cell_type = ws.cell_type(row, column)
 		if cell_type == XL_CELL_EMPTY or cell_type == XL_CELL_BLANK:
-			# column B is empty, return value in column C
-			return ws.cell_value(row, 2)
+			# if this column is empty, return value in next column
+			return ws.cell_value(row, column+1)
 		else:
-			return ws.cell_value(row, 1)
+			return ws.cell_value(row, column)
 
 	# to store cash account information read from this worksheet
 	this_account = {}
@@ -113,35 +117,46 @@ def read_cash(ws, port_values, datemode=0):
 
 				elif len(cell_value) > 11 and cell_value[:11] == 'Account No.':
 					this_account['account_num'] = get_value(row)
+
+				elif len(cell_value) > 12 and cell_value[:12] == 'Account Type':
+					this_account['account_type'] = get_value(row)
 					
+				elif len(cell_value) > 16 and cell_value[:16] == 'Valuation Period':
+					date_string = get_value(row, 2)
+					this_account['date'] = xldate_as_datetime(date_string, datemode)
+
 				elif len(cell_value) > 16 and cell_value[:16] == 'Account Currency':
 					this_account['currency'] = get_value(row)
 
 				elif len(cell_value) > 15 and cell_value[:15] == 'Account Balance':
 					this_account['balance'] = get_value(row)
 
-def read_portfolio_summary(ws, port_values, datemode=0):
-	"""
-	Read the content of the worksheet containing portfolio summary, iterate
-	through all its rows and columns to populate some portfolio values.
-	"""
-	if isinstance(ws, xlrd.sheet.Sheet) == False:
-		raise TypeError('read_portfolio_summary():Not a worksheet object')
+				elif len(cell_value) > 13 and cell_value[:13] == 'Exchange Rate':
+					this_account['fx_rate'] = get_value(row)
 
-	for row in range(ws.nrows):
-			
-		# search the first column
-		cell_value = ws.cell_value(row, 0)
-		cell_type = ws.cell_type(row, 0)
+				elif len(cell_value) > 9 and cell_value[:9] == 'HKD Equiv':
+					this_account['hkd_equivalent'] = get_value(row)
 
-		if (cell_value == 'Valuation Period : From'):
-			# the date is in this row, column B
-			cell_value = ws.cell_value(row, 1)
-			cell_type = ws.cell_type(row, 1)
-			if (cell_type == XL_CELL_DATE):	# it is a date in Excel, now convert
-											# it to python datetime object
-				print(xldate_as_datetime(cell_value, datemode))
-				break
-			else:							# it is not of 'date' format,
-											# something must be wrong
-				raise TypeError('read_portfolio_summary():cell {0},{1} should be in excel date format'.format(row, 1))
+
+
+def convert_to_date(date_string, fmt='dd/mm/yyyy'):
+	"""
+	Convert a date string to a Python datetime.date object in the user 
+	defined format.
+	"""
+	if fmt=='dd/mm/yyyy':
+		dates = date_string.split('/')
+		if (len(dates) == 3):
+			try:
+				dates_int = [int(d) for d in dates]
+				the_date = datetime.date(dates_int[2], dates_int[1], dates_int[0])
+				return the_date
+			except Exception as e:
+				# some thing wrong in the conversion process
+				raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))
+		else:
+			raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))
+	
+	else:
+		# format not handled
+		raise ValueError('convert_to_date(): invalid format: {0}'.format(fmt))
