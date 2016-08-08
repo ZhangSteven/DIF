@@ -1,0 +1,9 @@
+# The configuration file for DIF portfolio.
+#
+
+[logging]
+log_file = dif.log
+log_level = debug	# debug, info, warning, error, critical
+logger_name = main
+
+
