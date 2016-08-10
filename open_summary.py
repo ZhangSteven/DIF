@@ -13,39 +13,39 @@ from DIF.utility import logger
 
 
 
-def open_excel_summary(file_name):
-	"""
-	Open the excel file, populate portfolio values into a dictionary.
-	"""
-	logger.debug('in open_excel_summary()')
+# def open_excel_summary(file_name):
+# 	"""
+# 	Open the excel file, populate portfolio values into a dictionary.
+# 	"""
+# 	logger.debug('in open_excel_summary()')
 
-	try:
-		wb = open_workbook(filename=file_name)
-	except Exception as e:
-		logger.critical('DIF file {0} cannot be opened'.format(file_name))
-		logger.exception('open_excel_summary()')
-		raise
+# 	try:
+# 		wb = open_workbook(filename=file_name)
+# 	except Exception as e:
+# 		logger.critical('DIF file {0} cannot be opened'.format(file_name))
+# 		logger.exception('open_excel_summary()')
+# 		raise
 
-	# the place holder for DIF portfolio information
-	port_values = {}
+# 	# the place holder for DIF portfolio information
+# 	port_values = {}
 
-	# read portfolio summary
-	try:
-		sn = 'Portfolio Sum.'
-		ws = wb.sheet_by_name(sn)
-	except Exception as e:
-		logger.critical('worksheet {0} cannot be opened'.format(sn))
-		logger.exception('open_excel_summary()')
-		raise
+# 	# read portfolio summary
+# 	try:
+# 		sn = 'Portfolio Sum.'
+# 		ws = wb.sheet_by_name(sn)
+# 	except Exception as e:
+# 		logger.critical('worksheet {0} cannot be opened'.format(sn))
+# 		logger.exception('open_excel_summary()')
+# 		raise
 
-	try:
-		read_portfolio_summary(ws, port_values)
-	except Exception as e:
-		logger.error('failed to populate portfolio summary.')
-		raise
+# 	try:
+# 		read_portfolio_summary(ws, port_values)
+# 	except Exception as e:
+# 		logger.error('failed to populate portfolio summary.')
+# 		raise
 
-	show_portfolio_summary(port_values)
-	logger.debug('out of open_excel_summary()')
+# 	show_portfolio_summary(port_values)
+# 	logger.debug('out of open_excel_summary()')
 
 
 
@@ -79,7 +79,7 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 				port_values['date'] = d
 
 			else:
-				logger.debug('cell {0},1 is not a valid date: {1}'
+				logger.error('cell {0},1 is not a valid date: {1}'
 								.format(row, cell_value))
 				raise ValueError('date')	# 'date' to indicate what's 
 											# wrong, used in test code.

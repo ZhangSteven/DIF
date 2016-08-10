@@ -12,24 +12,26 @@ from DIF.utility import logger
 
 
 
-def open_excel_cash(file_name):
-	"""
-	Open the excel file, populate portfolio values into a dictionary.
-	"""
-	wb = open_workbook(filename=file_name)
+# def open_excel_cash(file_name):
+# 	"""
+# 	Open the excel file, populate portfolio values into a dictionary.
+#
+#	For testing only.
+# 	"""
+# 	wb = open_workbook(filename=file_name)
 
-	port_values = {}
+# 	port_values = {}
 
-	# find sheets that contain cash
-	sheet_names = wb.sheet_names()
-	for sn in sheet_names:
-		if len(sn) > 4 and sn[-4:] == '-BOC':
-			print('read from sheet {0}'.format(sn))
-			ws = wb.sheet_by_name(sn)
-			read_cash(ws, port_values)
+# 	# find sheets that contain cash
+# 	sheet_names = wb.sheet_names()
+# 	for sn in sheet_names:
+# 		if len(sn) > 4 and sn[-4:] == '-BOC':
+# 			print('read from sheet {0}'.format(sn))
+# 			ws = wb.sheet_by_name(sn)
+# 			read_cash(ws, port_values)
 
-	# show cash accounts
-	show_cash_accounts(port_values)
+# 	# show cash accounts
+# 	show_cash_accounts(port_values)
 
 
 
@@ -114,6 +116,7 @@ def read_cash(ws, port_values, datemode=0):
 	logger.debug('out of read_cash()')
 
 
+
 def show_cash_accounts(port_values):
 	cash_accounts = port_values['cash_accounts']
 
@@ -135,8 +138,8 @@ def show_cash_accounts(port_values):
 
 def convert_to_date(date_string, fmt='dd/mm/yyyy'):
 	"""
-	Convert a date string to a Python datetime.date object in the user 
-	defined format.
+	Convert a string to a Python datetime.date object with the format
+	specified.
 	"""
 	if fmt=='dd/mm/yyyy':
 		dates = date_string.split('/')
@@ -147,12 +150,13 @@ def convert_to_date(date_string, fmt='dd/mm/yyyy'):
 				return the_date
 			except Exception as e:
 				# some thing wrong in the conversion process
-				logger.error('convert_to_date(): wrong value to convert to date')
-				logger.exception('convert_to_date()')
-				raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))
+				logger.exception('convert_to_date(): invalid date_string: {0}'.format(date_string))
+				raise ValueError('convert_to_date()')
 		else:
-			raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))
+			logger.exception('convert_to_date(): invalid date_string: {0}'.format(date_string))
+			raise ValueError('convert_to_date()')
 	
 	else:
 		# format not handled
-		raise ValueError('convert_to_date(): invalid format: {0}'.format(fmt))
+		logger.exception('convert_to_date(): invalid date format: {0}'.format(fmt))
+		raise ValueError('convert_to_date()')
