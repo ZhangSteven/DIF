@@ -44,7 +44,18 @@ def read_holding(ws, port_values, datemode=0):
 	"""
 	logger.debug('in read_holding()')
 
-	
+	for row in range(ws.nrows):
+			
+		# search the first column
+		cell_value = ws.cell_value(row, 0)
+
+		if isinstance(cell_value, str) and '.' in cell_value:
+			tokens = cell_value.split('.')
+			if len(tokens) > 1:
+				if str.strip(tokens[1]).startswith('Debt Securities'):	# bond
+					print('bond: {0}'.format(cell_value))
+				elif str.strip(tokens[1]).startswith('Equities'):		# equity
+					print('equity: {0}'.format(cell_value))
 
 	logger.debug('out of read_holding()')
 

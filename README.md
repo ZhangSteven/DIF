@@ -11,6 +11,12 @@ logging.ERROR will get displayed. To display debug messages, do:
 
 	nose2 --log-level DEBUG
 
+To run just a specific test_xxx.py module, suppose it is under the test/ directory, then do:
+
+	nose2 -s test test_xxx
+
+see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose2
+
 
 ver 0.01
 
