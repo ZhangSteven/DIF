@@ -78,7 +78,7 @@ def _setup_logging():
 
     fn = config['logging']['log_file']
     fn = get_current_path() + '\\' + fn
-
+    # print(fn)
     fmt='%(asctime)s - %(module)s - %(levelname)s: %(message)s'
     log_level = config['logging']['log_level']
     log_level = convert_log_level(log_level)
