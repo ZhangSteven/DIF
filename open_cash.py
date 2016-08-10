@@ -7,7 +7,7 @@
 from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
-import datetime, logging
+import datetime
 from DIF.utility import logger
 
 
@@ -53,7 +53,7 @@ def read_cash(ws, port_values, datemode=0):
 		HKD_equivalent = cash_account['hkd_equivalent']	# retrieve amount in HKD
 		
 	"""
-	logger.log(logging.DEBUG, 'in read_cash()')
+	logger.debug('in read_cash()')
 
 	if 'cash_accounts' in port_values:
 		cash_accounts = port_values['cash_accounts']
@@ -111,7 +111,7 @@ def read_cash(ws, port_values, datemode=0):
 			elif cell_value.startswith('HKD Equiv'):
 				this_account['hkd_equivalent'] = get_value(row)
 
-	logger.log(logging.DEBUG, 'out of read_cash()')
+	logger.debug('out of read_cash()')
 
 
 def show_cash_accounts(port_values):
@@ -147,6 +147,8 @@ def convert_to_date(date_string, fmt='dd/mm/yyyy'):
 				return the_date
 			except Exception as e:
 				# some thing wrong in the conversion process
+				logger.error('convert_to_date(): wrong value to convert to date')
+				logger.exception('convert_to_date()')
 				raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))
 		else:
 			raise ValueError('convert_to_date(): invalid date_string: {0}'.format(date_string))

@@ -17,12 +17,13 @@ def open_excel_summary(file_name):
 	"""
 	Open the excel file, populate portfolio values into a dictionary.
 	"""
-	logger.log(logging.DEBUG, 'in open_excel_summary()')
+	logger.debug('in open_excel_summary()')
 
 	try:
 		wb = open_workbook(filename=file_name)
 	except Exception as e:
-		logger.log(logging.CRITICAL, 'DIF file {0} cannot be opened'.format(file_name))
+		logger.critical('DIF file {0} cannot be opened'.format(file_name))
+		logger.exception('open_excel_summary()')
 		raise
 
 	# the place holder for DIF portfolio information
@@ -33,18 +34,18 @@ def open_excel_summary(file_name):
 		sn = 'Portfolio Sum.'
 		ws = wb.sheet_by_name(sn)
 	except Exception as e:
-		logger.log(logging.CRITICAL, 'worksheet {0} cannot be opened'.format(sn))
-		# logger.log(logging.CRITICAL, repr(e))	# seems doesn't log anything?
+		logger.critical('worksheet {0} cannot be opened'.format(sn))
+		logger.exception('open_excel_summary()')
 		raise
 
 	try:
 		read_portfolio_summary(ws, port_values)
 	except Exception as e:
-		logger.log(logging.ERROR, 'failed to populate portfolio summary.')
+		logger.error('failed to populate portfolio summary.')
 		raise
 
 	show_portfolio_summary(port_values)
-	logger.log(logging.DEBUG, 'out of open_excel_summary()')
+	logger.debug('out of open_excel_summary()')
 
 
 
@@ -53,7 +54,7 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 	Read the content of the worksheet containing portfolio summary, iterate
 	through all its rows and columns to populate some portfolio values.
 	"""
-	logger.log(logging.DEBUG, 'in read_portfolio_summary()')
+	logger.debug('in read_portfolio_summary()')
 
 	count = 0
 	for row in range(ws.nrows):
@@ -78,9 +79,10 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 				port_values['date'] = d
 
 			else:
-				logger.log(logging.ERROR, 'cell {0},1 is not a valid date: {1}'
-							.format(row, cell_value))
-				raise ValueError()
+				logger.debug('cell {0},1 is not a valid date: {1}'
+								.format(row, cell_value))
+				raise ValueError('date')	# 'date' to indicate what's 
+											# wrong, used in test code.
 
 		elif (cell_value.startswith('Total Units Held at this Valuation  Date')):
 			cell_value = ws.cell_value(row, 2)	# read value at column C
@@ -100,7 +102,7 @@ def read_portfolio_summary(ws, port_values, datemode=0):
 			cell_value = ws.cell_value(row, 9)
 			populate_value(port_values, 'nav', cell_value, row, 9)
 			
-	logger.log(logging.DEBUG, 'out of read_portfolio_summary()')
+	logger.debug('out of read_portfolio_summary()')
 
 
 
@@ -112,17 +114,21 @@ def populate_value(port_values, key, cell_value, row, column):
 
 	If cell_value is valid, assign it to the port_values dictionary. Otherwise
 	throw an ValueError exception with the msg to indicate something is wrong.
+
+	port_values	: the dictionary holding the portfolio values read from
+					the excel.
+	key			: needs to be a string, indicating the name of the value.
 	"""
-	logger.log(logging.DEBUG, 'in populate_value()')
+	logger.debug('in populate_value()')
 
 	if (isinstance(cell_value, float)) and cell_value > 0:
 		port_values[key] = cell_value
 	else:
-		logger.log(logging.ERROR, 'cell {0},{1} is not a valid {2}: {3}'
-					.format(row, column, key, cell_value))
-		raise ValueError()
+		logger.error('cell {0},{1} is not a valid {2}: {3}'
+						.format(row, column, key, cell_value))
+		raise ValueError(key)
 
-	logger.log(logging.DEBUG, 'out of populate_value()')
+	logger.debug('out of populate_value()')
 
 
 

@@ -1,7 +1,7 @@
 # coding=utf-8
 # 
-# This file contains utility functions to be used by other modules in
-# this package, such as logging and config.
+# from config_logging package, provides a config object (from config file)
+# and a logger object (logging to a file).
 # 
 import logging
 import configparser
@@ -21,7 +21,7 @@ def get_current_path():
 
 
 
-def _load_config(filename='config'):
+def _load_config(filename='dif.config'):
 	"""
 	Read the config file, convert it to a config object. The config file is 
 	supposed to be located in the same directory as the py files, and the
@@ -39,7 +39,7 @@ def _load_config(filename='config'):
 
 
 
-# initialize the config object if it's not there
+# initialized only once when this module is first imported by others
 if not 'config' in globals():
 	config = _load_config()
 
@@ -65,38 +65,29 @@ def convert_log_level(log_level):
 
 
 
-def _create_logger():
+def _setup_logging():
     """ 
-    Creates a logger based on the python logging package. Supposed to be 
-    called only once.
+    Setup logging parameters, supposed to be called only once.
 
     Original code from:
-    http://stackoverflow.com/questions/7621897/python-logging-module-globally
+    https://gimmebar-assets.s3.amazonaws.com/4fe38b76be0a5.html
     """
 
     # use the config object
     global config
 
-    filename = config['logging']['log_file']
-    filename = get_current_path() + '\\' + filename
+    fn = config['logging']['log_file']
+    fn = get_current_path() + '\\' + fn
 
-    formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
-    handler = logging.FileHandler(filename)
-    handler.setFormatter(formatter)
-
-    logger_name = config['logging']['logger_name']
+    fmt='%(asctime)s - %(module)s - %(levelname)s: %(message)s'
     log_level = config['logging']['log_level']
     log_level = convert_log_level(log_level)
 
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(log_level)
-    logger.addHandler(handler)
-    
-    return logger
+    logging.basicConfig(level=log_level, filename=fn, format=fmt)
+    return logging.getLogger('root')
 
 
 
-# initialize the logger if it's not there
+# initialized only once when this module is first imported by others
 if not 'logger' in globals():
-	logger = _create_logger()
-
+	logger = _setup_logging()
