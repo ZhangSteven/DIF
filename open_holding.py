@@ -17,17 +17,17 @@ def read_holding(ws, port_values, datemode=0):
 	we do:
 
 	equity_holding = port_values['equity']
-	for id in equity_holding:
-		equity = equity_holding[id]
+	for equity in equity_holding:
+		equity['ticker'], equity['name']
 		... retrive equity values using the following key ...
 
-		ticker, isin, name, number_of_shares, currency, listed_location, 
+		ticker, name, number_of_shares, currency, listed_location, 
 		fx_trade_date, last_trade_date, average_cost, price, book_cost,
 		market_value
 
 	bond_holding = port_values['bond']
-	for id in bond_holding:
-		bond = bond_holding[id]
+	for bond in bond_holding:
+		bond['isin'], bond['name']
 		... retrive bond values using the following key ...
 
 		isin, name, accounting_treatment, par_amount, currency, is_listed, 
@@ -36,10 +36,10 @@ def read_holding(ws, port_values, datemode=0):
 		interest_bought, amortized_value, market_value, accrued_interest,
 		amortized_gain_loss, market_gain_loss, fx_gain_loss
 
-	Note a bond will not have all of the above fields, depending on
-	its accounting treatment, HTM bonds have amortized_cost, amortized_value,
-	amortized_gain_loss, and have price, market_value, market_gain_loss set to
-	zero. Bonds for trading is the opposite.
+	Note a bond may not have all of the above fields, depending on
+	its accounting treatment. A HTM bond has amortized_cost, amortized_value,
+	amortized_gain_loss, while a trading bond has price, market_value, 
+	market_gain_loss set to zero.
 
 	"""
 	logger.debug('in read_holding()')
@@ -74,10 +74,12 @@ def read_holding(ws, port_values, datemode=0):
 				if str.strip(tokens[1]).startswith('Debt Securities'):	# bond
 					logger.debug('bond: {0}'.format(cell_value))
 
+					bond_holding = get_bond_holding(port_values)
+					currency = read_currency(cell_value)
 					fields, n = read_bond_fields(ws, row)	# read the bond
 					row = row + n							# field names
 
-					n = read_bond_section(ws, row)
+					n = read_bond_section(ws, row, fields, currency, bond_holding)
 					row = row + n
 
 				elif str.strip(tokens[1]).startswith('Equities'):		# equity
@@ -90,6 +92,41 @@ def read_holding(ws, port_values, datemode=0):
 		row = row + 1
 
 	logger.debug('out of read_holding()')
+
+
+
+def get_bond_holding(port_values):
+	"""
+	Return the bond_holding list.
+	"""
+	if 'bond' in port_values:
+		bond_holding = port_values['bond']
+	else:
+		bond_holding = []
+		port_values['bond'] = bond_holding
+
+	return bond_holding
+
+
+
+def read_currency(cell_value):
+	"""
+	Read the currency from the cell containing a section start, such as
+	'V. Debt Securities - US$  (債務票據- 美元)',
+	'V. Debt Securities - SGD  (債務票據- 星加坡元)',
+	'X. Equities - USD (股票-美元)'
+
+	From the above strings, the function return USD, SGD, USD
+	"""
+	temp_list = cell_value.split('-')
+	token = temp_list[1]
+	temp_list = token.split('(')
+	currency = str.strip(temp_list[0])
+
+	if currency == 'US$':
+		currency = 'USD'	# make the correction
+
+	return currency
 
 
 
@@ -191,9 +228,24 @@ def read_bond_fields(ws, row):
 	return (fields, rows_read)
 
 
-def read_bond_section(ws, row):
+
+def read_bond_section(ws, row, fields, currency, bond_holding):
 	"""
 	Read a bond section in the worksheet (ws), starting on row number (row).
+	fields being the list of fields to read from column C. For example,
+	for HTM bond section, we expect to fields in the following order:
+
+		par_amount, currency, is_listed, listed_location, fx_trade_date, 
+		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+		amortized_cost, book_cost, interest_bought, amortized_value, 
+		accrued_interest, amortized_gain_loss, fx_gain_loss
+
+	for trading bonds, we expect to see fields in the following order:
+
+		par_amount, currency, is_listed, listed_location, fx_trade_date, 
+		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+		price, book_cost, interest_bought, market_value, accrued_interest,
+		market_gain_loss, fx_gain_loss
 
 	Return the number of rows read in this function
 	"""
@@ -214,12 +266,13 @@ def read_bond_section(ws, row):
 				# logger.debug(temp_str)
 				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
 					logger.debug('HTM: {0}'.format(cell_value))
-					n = read_bond_sub_section(ws, row+rows_read, 'HTM')
+
+					n = read_bond_sub_section(ws, row+rows_read, 'HTM', fields, currency, bond_holding)
 					rows_read = rows_read + n
 				
 				elif temp_str.startswith('Trading'):
 					logger.debug('Trading: {0}'.format(cell_value))
-					n = read_bond_sub_section(ws, row+rows_read, 'Trading')
+					n = read_bond_sub_section(ws, row+rows_read, 'Trading', fields, port_values)
 					rows_read = rows_read + n
 
 				else:
@@ -237,7 +290,7 @@ def read_bond_section(ws, row):
 
 
 
-def read_bond_sub_section(ws, row, category):
+def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
 	"""
 	Read a bond section in the worksheet (ws), starting on row number (row).
 
@@ -255,8 +308,25 @@ def read_bond_sub_section(ws, row, category):
 			# a holding position looks like "(isin code) security name"
 			i = cell_value.find(')', 1, len(cell_value)-1)
 			if i > 0:	# the string looks like '(xxx) yyy'
+				bond = {}
+
+				# start populating fields of a bond, then save it to the 
+				# bond_holding list.
 				isin = cell_value[1:i]
-				logger.debug(isin)
+				bond['isin'] = isin
+				bond['name'] = cell_value
+				bond['currency'] = currency
+				bond['accounting_treatment'] = category
+
+				column = 2	# now start reading fields in column C
+				for field in fields:
+					cell_value = ws.cell_value(row+rows_read, column)
+
+					column = column + 1
+
+
+				bond_holding.append(bond)
+				# logger.debug(isin)
 
 		elif isinstance(cell_value, str) and str.strip(cell_value) == '':
 			# the subsection ends
