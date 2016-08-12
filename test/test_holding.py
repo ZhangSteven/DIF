@@ -7,7 +7,7 @@ import unittest2
 import datetime
 from xlrd import open_workbook
 from DIF.utility import get_current_path
-from DIF.open_holding import read_holding
+from DIF.open_holding import read_holding, read_bond_fields
 
 class TestHolding(unittest2.TestCase):
 
@@ -30,19 +30,24 @@ class TestHolding(unittest2.TestCase):
 
 
 
-    def test_normal(self):
+    def test_read_bond_fields(self):
         """
-        Test the four values read from the summary sheet.
+        Test the read_bond_fields() method.
         """
 
-        # here we do not use try/except claues becuase we provide
-        # samples the exists, we will have another set of tests 
-        # for error conditions.
-        filename = get_current_path() + '\\samples\\holdings_sample.xls'
+        filename = get_current_path() + '\\samples\\holdings_sample2.xls'
         wb = open_workbook(filename=filename)
         ws = wb.sheet_by_name('Portfolio Val.')
+        row = 62    # where the bond section starts
 
-        read_holding(ws, self.port_values)
+        fields, n = read_bond_fields(ws, row)
+        self.assertEqual(n, 4)
+        self.assertEqual(len(fields), 15)
 
-        p = self.port_values
-        self.assertAlmostEqual(1,1)
+        f = ''
+        for s in fields:
+            f = f + s + ', '
+
+        # check the fields are read correctly
+        self.assertEqual(f, 
+            'par_amount, is_listed, listed_location, fx_trade_date, coupon_rate, coupon_start_date, maturity_date, average_cost, amortized_cost, book_cost, interest_bought, amortized_value, accrued_interest, amortized_gain_loss, fx_gain_loss, ')
