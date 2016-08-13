@@ -91,3 +91,43 @@ def _setup_logging():
 # initialized only once when this module is first imported by others
 if not 'logger' in globals():
 	logger = _setup_logging()
+
+
+
+def get_datemode():
+	"""
+	Read datemode from the config object and return it (in integer)
+	"""
+	global config
+	d = config['excel']['datemode']
+	try:
+		datemode = int(d)
+	except:
+		logger.error('get_datemode(): invalid datemode value: {0}'.format(d))
+		raise
+
+	return datemode
+
+
+
+def retrieve_or_create(port_values, key):
+	"""
+	retrieve or create the holding objects (list of dictionary) from the 
+	port_values object, the holding place for all items in the portfolio.
+	"""
+
+	if key in port_values:	# key exists, retrieve
+		holding = port_values[key]	
+	else:					# key doesn't exist, create
+		if key == 'bond' or key == 'equity':
+			holding = []
+		elif key == 'cash_accounts':
+			holding = {}
+		else:
+			# not implemented yet
+			logger.error('retrieve_or_create(): invalid key: {0}'.format(key))
+			raise ValueError('invalid_key')
+
+		port_values[key] = holding
+
+	return holding

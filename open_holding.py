@@ -8,7 +8,8 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
 import datetime
-from DIF.utility import logger
+from DIF.utility import logger, get_datemode, retrieve_or_create
+
 
 
 def read_holding(ws, port_values, datemode=0):
@@ -74,7 +75,7 @@ def read_holding(ws, port_values, datemode=0):
 				if str.strip(tokens[1]).startswith('Debt Securities'):	# bond
 					logger.debug('bond: {0}'.format(cell_value))
 
-					bond_holding = get_bond_holding(port_values)
+					bond_holding = retrieve_or_create(port_values, 'bond')
 					currency = read_currency(cell_value)
 					fields, n = read_bond_fields(ws, row)	# read the bond
 					row = row + n							# field names
@@ -85,27 +86,18 @@ def read_holding(ws, port_values, datemode=0):
 				elif str.strip(tokens[1]).startswith('Equities'):		# equity
 					logger.debug('equity: {0}'.format(cell_value))
 
-					n = read_equity_section(ws, row)
+					equity_holding = retrieve_or_create(port_values, 'equity')
+					currency = read_currency(cell_value)
+					fields, n = read_equity_fields(ws, row)
+					row = row + n
+
+					n = read_equity_section(ws, row, fields, currency, bond_holding)
 					row = row + n
 		
 		# move to next row
 		row = row + 1
 
 	logger.debug('out of read_holding()')
-
-
-
-def get_bond_holding(port_values):
-	"""
-	Return the bond_holding list.
-	"""
-	if 'bond' in port_values:
-		bond_holding = port_values['bond']
-	else:
-		bond_holding = []
-		port_values['bond'] = bond_holding
-
-	return bond_holding
 
 
 
@@ -266,13 +258,12 @@ def read_bond_section(ws, row, fields, currency, bond_holding):
 				# logger.debug(temp_str)
 				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
 					logger.debug('HTM: {0}'.format(cell_value))
-
 					n = read_bond_sub_section(ws, row+rows_read, 'HTM', fields, currency, bond_holding)
 					rows_read = rows_read + n
 				
 				elif temp_str.startswith('Trading'):
 					logger.debug('Trading: {0}'.format(cell_value))
-					n = read_bond_sub_section(ws, row+rows_read, 'Trading', fields, port_values)
+					n = read_bond_sub_section(ws, row+rows_read, 'Trading', fields, currency, bond_holding)
 					rows_read = rows_read + n
 
 				else:
@@ -321,17 +312,55 @@ def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
 				column = 2	# now start reading fields in column C
 				for field in fields:
 					cell_value = ws.cell_value(row+rows_read, column)
+					logger.debug(cell_value)
 
 					if field in ['is_listed', 'listed_location']:
+						if isinstance(cell_value, str):
+							bond[field] = cell_value
+						else:	# value is of wrong type:
+							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_str')
 
 					elif field in ['par_amount', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
 									'amortized_cost', 'price', 'book_cost', 'interest_bought',
 									'amortized_value', 'market_value', 
 									'accrued_interest', 'amortized_gain_loss', 
 									'market_gain_loss', 'fx_gain_loss']:
+						
+						# ideally we should have fields of the above read in
+						# as a float number, but sometimes they insert a holding 
+						# with par_amount = 0 as an empty cell or put par_amount = 0.
+						# if that's the case, we ignore other fields.
+						if field == 'par_amount' and isinstance(cell_value, str) \
+							and str.strip(cell_value) == '':
+							# par_amount is an empty cell
+							bond['par_amount'] = 0
+							logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
+											format(bond['name']))
+							break	# stop reading other fields for this bond
+
+						if isinstance(cell_value, float):
+							bond[field] = cell_value
+
+							if bond['par_amount'] == 0:
+								logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
+												format(bond['name']))
+								break	# stop reading other fields for this bond
+
+						else:	# value is of wrong type:
+							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_float')
 
 					elif field in ['coupon_start_date', 'maturity_date']:
-
+						if isinstance(cell_value, float):
+							datemode = get_datemode()
+							bond[field] = xldate_as_datetime(cell_value, datemode)
+						else:	# value is of wrong type:
+							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_float_date')
 
 
 					column = column + 1

@@ -8,7 +8,7 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
 import datetime
-from DIF.utility import logger
+from DIF.utility import logger, retrieve_or_create
 
 
 
@@ -57,11 +57,7 @@ def read_cash(ws, port_values, datemode=0):
 	"""
 	logger.debug('in read_cash()')
 
-	if 'cash_accounts' in port_values:
-		cash_accounts = port_values['cash_accounts']
-	else:
-		cash_accounts = {}
-		port_values['cash_accounts'] = cash_accounts
+	cash_accounts = retrieve_or_create(port_values, 'cash_accounts')
 
 	def get_value(row, column=1):
 		"""
