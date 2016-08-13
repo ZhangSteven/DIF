@@ -22,7 +22,7 @@ def read_holding(ws, port_values, datemode=0):
 		... retrive equity values using the following key ...
 
 		ticker, name, number_of_shares, currency, listed_location, 
-		fx_trade_date, last_trade_date, average_cost, price, book_cost,
+		fx_on_trade_day, last_trade_date, average_cost, price, book_cost,
 		market_value
 
 	bond_holding = port_values['bond']
@@ -31,7 +31,7 @@ def read_holding(ws, port_values, datemode=0):
 		... retrive bond values using the following key ...
 
 		isin, name, accounting_treatment, par_amount, currency, is_listed, 
-		listed_location, fx_trade_date, coupon_rate, coupon_start_date, 
+		listed_location, fx_on_trade_day, coupon_rate, coupon_start_date, 
 		maturity_date, average_cost, amortized_cost, price, book_cost,
 		interest_bought, amortized_value, market_value, accrued_interest,
 		amortized_gain_loss, market_gain_loss, fx_gain_loss
@@ -165,7 +165,7 @@ def read_bond_fields(ws, row):
 		We need the following bond fields
 
 		isin, name, accounting_treatment, par_amount, currency, is_listed, 
-		listed_location, fx_trade_date, coupon_rate, coupon_start_date, 
+		listed_location, fx_on_trade_day, coupon_rate, coupon_start_date, 
 		maturity_date, average_cost, amortized_cost, price, book_cost,
 		interest_bought, amortized_value, market_value, accrued_interest,
 		amortized_gain_loss, market_gain_loss, fx_gain_loss
@@ -182,7 +182,7 @@ def read_bond_fields(ws, row):
 				elif field_tuple == ('Primary', 'Exchange'):
 					fields.append('listed_location')
 				elif field_tuple == ('(AVG) FX', 'for TXN'):
-					fields.append('fx_trade_date')
+					fields.append('fx_on_trade_day')
 				elif field_tuple == ('Int.', 'Rate (%)'):
 					fields.append('coupon_rate')
 				elif field_tuple == ('Int.', 'Start Day'):
@@ -235,14 +235,14 @@ def read_bond_section(ws, row, fields, currency, bond_holding):
 	fields being the list of fields to read from column C. For example,
 	for HTM bond section, we expect to fields in the following order:
 
-		par_amount, currency, is_listed, listed_location, fx_trade_date, 
+		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
 		coupon_rate, coupon_start_date, maturity_date, average_cost, 
 		amortized_cost, book_cost, interest_bought, amortized_value, 
 		accrued_interest, amortized_gain_loss, fx_gain_loss
 
 	for trading bonds, we expect to see fields in the following order:
 
-		par_amount, currency, is_listed, listed_location, fx_trade_date, 
+		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
 		coupon_rate, coupon_start_date, maturity_date, average_cost, 
 		price, book_cost, interest_bought, market_value, accrued_interest,
 		market_gain_loss, fx_gain_loss
@@ -321,6 +321,18 @@ def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
 				column = 2	# now start reading fields in column C
 				for field in fields:
 					cell_value = ws.cell_value(row+rows_read, column)
+
+					if field in ['is_listed', 'listed_location']:
+
+					elif field in ['par_amount', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
+									'amortized_cost', 'price', 'book_cost', 'interest_bought',
+									'amortized_value', 'market_value', 
+									'accrued_interest', 'amortized_gain_loss', 
+									'market_gain_loss', 'fx_gain_loss']:
+
+					elif field in ['coupon_start_date', 'maturity_date']:
+
+
 
 					column = column + 1
 
