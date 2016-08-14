@@ -12,7 +12,7 @@ from DIF.utility import logger, get_datemode, retrieve_or_create
 
 
 
-def read_holding(ws, port_values, datemode=0):
+def read_holding(ws, port_values):
 	"""
 	Read the worksheet with portfolio holdings. To retrieve holding, 
 	we do:
@@ -80,7 +80,7 @@ def read_holding(ws, port_values, datemode=0):
 					fields, n = read_bond_fields(ws, row)	# read the bond
 					row = row + n							# field names
 
-					n = read_bond_section(ws, row, fields, currency, bond_holding)
+					n = read_section(ws, row, fields, 'bond', currency, bond_holding)
 					row = row + n
 
 				elif str.strip(tokens[1]).startswith('Equities'):		# equity
@@ -90,6 +90,7 @@ def read_holding(ws, port_values, datemode=0):
 					currency = read_currency(cell_value)
 					fields, n = read_equity_fields(ws, row)
 					row = row + n
+
 					n = read_section(ws, row, fields, 'equity', currency, equity_holding)
 					row = row + n
 		
@@ -490,161 +491,161 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 
 
-def read_bond_section(ws, row, fields, currency, bond_holding):
-	"""
-	Read a bond section in the worksheet (ws), starting on row number (row).
-	fields being the list of fields to read from column C. For example,
-	for HTM bond section, we expect to fields in the following order:
+# def read_bond_section(ws, row, fields, currency, bond_holding):
+# 	"""
+# 	Read a bond section in the worksheet (ws), starting on row number (row).
+# 	fields being the list of fields to read from column C. For example,
+# 	for HTM bond section, we expect to fields in the following order:
 
-		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
-		coupon_rate, coupon_start_date, maturity_date, average_cost, 
-		amortized_cost, book_cost, interest_bought, amortized_value, 
-		accrued_interest, amortized_gain_loss, fx_gain_loss
+# 		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
+# 		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+# 		amortized_cost, book_cost, interest_bought, amortized_value, 
+# 		accrued_interest, amortized_gain_loss, fx_gain_loss
 
-	for trading bonds, we expect to see fields in the following order:
+# 	for trading bonds, we expect to see fields in the following order:
 
-		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
-		coupon_rate, coupon_start_date, maturity_date, average_cost, 
-		price, book_cost, interest_bought, market_value, accrued_interest,
-		market_gain_loss, fx_gain_loss
+# 		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
+# 		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+# 		price, book_cost, interest_bought, market_value, accrued_interest,
+# 		market_gain_loss, fx_gain_loss
 
-	Return the number of rows read in this function
-	"""
-	rows_read = 1
+# 	Return the number of rows read in this function
+# 	"""
+# 	rows_read = 1
 
-	while (row+rows_read < ws.nrows):
-		cell_value = ws.cell_value(row+rows_read, 0)
+# 	while (row+rows_read < ws.nrows):
+# 		cell_value = ws.cell_value(row+rows_read, 0)
 		
-		# logger.debug(cell_value)
-		if isinstance(cell_value, str) and cell_value.startswith('('):
+# 		# logger.debug(cell_value)
+# 		if isinstance(cell_value, str) and cell_value.startswith('('):
 
-			# detect the start of a subsection
-			# a subsection looks like "(i) Held to Maturity (xxx)"
-			i = cell_value.find(')', 1, len(cell_value)-1)
-			if i > 0:	# the string looks like '(xxx) yyy'
-				temp_str = str.strip(cell_value[i+1:])
+# 			# detect the start of a subsection
+# 			# a subsection looks like "(i) Held to Maturity (xxx)"
+# 			i = cell_value.find(')', 1, len(cell_value)-1)
+# 			if i > 0:	# the string looks like '(xxx) yyy'
+# 				temp_str = str.strip(cell_value[i+1:])
 				
-				# logger.debug(temp_str)
-				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
-					logger.debug('HTM: {0}'.format(cell_value))
-					n = read_bond_sub_section(ws, row+rows_read, 'HTM', fields, currency, bond_holding)
-					rows_read = rows_read + n
+# 				# logger.debug(temp_str)
+# 				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
+# 					logger.debug('HTM: {0}'.format(cell_value))
+# 					n = read_bond_sub_section(ws, row+rows_read, 'HTM', fields, currency, bond_holding)
+# 					rows_read = rows_read + n
 				
-				elif temp_str.startswith('Trading'):
-					logger.debug('Trading: {0}'.format(cell_value))
-					n = read_bond_sub_section(ws, row+rows_read, 'Trading', fields, currency, bond_holding)
-					rows_read = rows_read + n
+# 				elif temp_str.startswith('Trading'):
+# 					logger.debug('Trading: {0}'.format(cell_value))
+# 					n = read_bond_sub_section(ws, row+rows_read, 'Trading', fields, currency, bond_holding)
+# 					rows_read = rows_read + n
 
-				else:
-					# some other category other than HTM or Trading,
-					# maybe needs to implement in the future
-					pass
+# 				else:
+# 					# some other category other than HTM or Trading,
+# 					# maybe needs to implement in the future
+# 					pass
 
-		elif isinstance(cell_value, str) and cell_value.startswith('Total'):
-			# the section ends
-			break
+# 		elif isinstance(cell_value, str) and cell_value.startswith('Total'):
+# 			# the section ends
+# 			break
 
-		rows_read = rows_read + 1	# move to next row
+# 		rows_read = rows_read + 1	# move to next row
 
-	return rows_read
+# 	return rows_read
 
 
 
-def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
-	"""
-	Read a bond section in the worksheet (ws), starting on row number (row).
+# def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
+# 	"""
+# 	Read a bond section in the worksheet (ws), starting on row number (row).
 
-	Return the number of rows read in this function
-	"""
-	rows_read = 1
+# 	Return the number of rows read in this function
+# 	"""
+# 	rows_read = 1
 
-	while (row+rows_read < ws.nrows):
-		cell_value = ws.cell_value(row+rows_read, 0)
+# 	while (row+rows_read < ws.nrows):
+# 		cell_value = ws.cell_value(row+rows_read, 0)
 		
-		# logger.debug(cell_value)
-		if isinstance(cell_value, str) and cell_value.startswith('('):
+# 		# logger.debug(cell_value)
+# 		if isinstance(cell_value, str) and cell_value.startswith('('):
 
-			# detect the start of a bond holding position
-			# a holding position looks like "(isin code) security name"
-			i = cell_value.find(')', 1, len(cell_value)-1)
-			if i > 0:	# the string looks like '(xxx) yyy'
-				bond = {}
+# 			# detect the start of a bond holding position
+# 			# a holding position looks like "(isin code) security name"
+# 			i = cell_value.find(')', 1, len(cell_value)-1)
+# 			if i > 0:	# the string looks like '(xxx) yyy'
+# 				bond = {}
 
-				# start populating fields of a bond, then save it to the 
-				# bond_holding list.
-				isin = cell_value[1:i]
-				bond['isin'] = isin
-				bond['name'] = cell_value
-				bond['currency'] = currency
-				bond['accounting_treatment'] = category
+# 				# start populating fields of a bond, then save it to the 
+# 				# bond_holding list.
+# 				isin = cell_value[1:i]
+# 				bond['isin'] = isin
+# 				bond['name'] = cell_value
+# 				bond['currency'] = currency
+# 				bond['accounting_treatment'] = category
 
-				column = 2	# now start reading fields in column C
-				for field in fields:
-					cell_value = ws.cell_value(row+rows_read, column)
-					logger.debug(cell_value)
+# 				column = 2	# now start reading fields in column C
+# 				for field in fields:
+# 					cell_value = ws.cell_value(row+rows_read, column)
+# 					logger.debug(cell_value)
 
-					if field in ['is_listed', 'listed_location']:
-						if isinstance(cell_value, str):
-							bond[field] = cell_value
-						else:	# value is of wrong type:
-							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_str')
+# 					if field in ['is_listed', 'listed_location']:
+# 						if isinstance(cell_value, str):
+# 							bond[field] = cell_value
+# 						else:	# value is of wrong type:
+# 							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+# 											format(field, row+rows_read, column, cell_value))
+# 							raise TypeError('bad_field_type_str')
 
-					elif field in ['par_amount', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
-									'amortized_cost', 'price', 'book_cost', 'interest_bought',
-									'amortized_value', 'market_value', 
-									'accrued_interest', 'amortized_gain_loss', 
-									'market_gain_loss', 'fx_gain_loss']:
+# 					elif field in ['par_amount', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
+# 									'amortized_cost', 'price', 'book_cost', 'interest_bought',
+# 									'amortized_value', 'market_value', 
+# 									'accrued_interest', 'amortized_gain_loss', 
+# 									'market_gain_loss', 'fx_gain_loss']:
 						
-						# ideally we should have fields of the above read in
-						# as a float number, but sometimes they insert a holding 
-						# with par_amount = 0 as an empty cell or put par_amount = 0.
-						# if that's the case, we ignore other fields.
-						if field == 'par_amount' and isinstance(cell_value, str) \
-							and str.strip(cell_value) == '':
-							# par_amount is an empty cell
-							bond['par_amount'] = 0
-							logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
-											format(bond['name']))
-							break	# stop reading other fields for this bond
+# 						# ideally we should have fields of the above read in
+# 						# as a float number, but sometimes they insert a holding 
+# 						# with par_amount = 0 as an empty cell or put par_amount = 0.
+# 						# if that's the case, we ignore other fields.
+# 						if field == 'par_amount' and isinstance(cell_value, str) \
+# 							and str.strip(cell_value) == '':
+# 							# par_amount is an empty cell
+# 							bond['par_amount'] = 0
+# 							logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
+# 											format(bond['name']))
+# 							break	# stop reading other fields for this bond
 
-						if isinstance(cell_value, float):
-							bond[field] = cell_value
+# 						if isinstance(cell_value, float):
+# 							bond[field] = cell_value
 
-							if bond['par_amount'] == 0:
-								logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
-												format(bond['name']))
-								break	# stop reading other fields for this bond
+# 							if bond['par_amount'] == 0:
+# 								logger.warning('read_bond_sub_section(): holding amount = 0 for bond: {0}'.
+# 												format(bond['name']))
+# 								break	# stop reading other fields for this bond
 
-						else:	# value is of wrong type:
-							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_float')
+# 						else:	# value is of wrong type:
+# 							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+# 											format(field, row+rows_read, column, cell_value))
+# 							raise TypeError('bad_field_type_float')
 
-					elif field in ['coupon_start_date', 'maturity_date']:
-						if isinstance(cell_value, float):
-							datemode = get_datemode()
-							bond[field] = xldate_as_datetime(cell_value, datemode)
-						else:	# value is of wrong type:
-							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_float_date')
-
-
-					column = column + 1
+# 					elif field in ['coupon_start_date', 'maturity_date']:
+# 						if isinstance(cell_value, float):
+# 							datemode = get_datemode()
+# 							bond[field] = xldate_as_datetime(cell_value, datemode)
+# 						else:	# value is of wrong type:
+# 							logger.error('read_bond_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+# 											format(field, row+rows_read, column, cell_value))
+# 							raise TypeError('bad_field_type_float_date')
 
 
-				bond_holding.append(bond)
-				# logger.debug(isin)
+# 					column = column + 1
 
-		elif is_end_of_sub_section(ws, row+rows_read):
-			# the subsection ends
-			break
 
-		rows_read = rows_read + 1	# move to next row
+# 				bond_holding.append(bond)
+# 				# logger.debug(isin)
 
-	return rows_read
+# 		elif is_end_of_sub_section(ws, row+rows_read):
+# 			# the subsection ends
+# 			break
+
+# 		rows_read = rows_read + 1	# move to next row
+
+# 	return rows_read
 
 
 

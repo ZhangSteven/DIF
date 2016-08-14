@@ -8,8 +8,7 @@ from datetime import datetime
 from xlrd import open_workbook
 from DIF.utility import get_current_path
 from DIF.open_holding import read_holding, read_bond_fields, read_currency, \
-                            get_datemode, \
-                            read_bond_section, read_equity_fields, \
+                            get_datemode, read_equity_fields, \
                             read_sub_section, read_section
 
 class TestHolding(unittest2.TestCase):
@@ -701,3 +700,52 @@ class TestHolding(unittest2.TestCase):
                 self.assertAlmostEqual(equity['market_value'], 2000000)
                 self.assertAlmostEqual(equity['market_gain_loss'], 0)
                 self.assertAlmostEqual(equity['fx_gain_loss'], 0)
+
+
+
+    def test_open_holding(self):
+        """
+        Read the holding file, the statistics are:
+
+        Bond        
+                        total   zero holding
+        USD (HTM)       25      2
+        USD (Trading)   61      39
+        SGD (HTM)       10      10
+        SGD (Trading)   1       1
+        CNY (HTM)       2       0
+        CNY (Trading)   15      13
+        total           114     65
+                
+        Equity      
+                        total   zero holding
+        HKD             10      5
+        USD             4       2
+                        14      7
+        """
+        filename = get_current_path() + '\\samples\\holdings_sample.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+
+        port_values = {}
+        read_holding(ws, port_values)
+
+        bond_holding = port_values['bond']
+        self.assertEqual(len(bond_holding), 114)
+
+        empty_bond = 0
+        for bond in bond_holding:
+            if bond['par_amount'] == 0:
+                empty_bond = empty_bond + 1
+
+        self.assertEqual(empty_bond, 65)
+
+        equity_holding = port_values['equity']
+        self.assertEqual(len(equity_holding), 14)
+
+        empty_equity = 0
+        for equity in equity_holding:
+            if equity['number_of_shares'] == 0:
+                empty_equity = empty_equity + 1
+
+        self.assertEqual(empty_equity, 7)
