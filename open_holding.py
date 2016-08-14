@@ -22,9 +22,9 @@ def read_holding(ws, port_values, datemode=0):
 		equity['ticker'], equity['name']
 		... retrive equity values using the following key ...
 
-		ticker, name, number_of_shares, currency, listed_location, 
-		fx_on_trade_day, last_trade_date, average_cost, price, book_cost,
-		market_value
+		ticker, isin, accounting_treatment, name, number_of_shares, currency, 
+		listed_location, fx_on_trade_day, last_trade_date, average_cost, price, 
+		book_cost, market_value, market_gain_loss, fx_gain_loss
 
 	bond_holding = port_values['bond']
 	for bond in bond_holding:
@@ -90,8 +90,7 @@ def read_holding(ws, port_values, datemode=0):
 					currency = read_currency(cell_value)
 					fields, n = read_equity_fields(ws, row)
 					row = row + n
-
-					n = read_equity_section(ws, row, fields, currency, bond_holding)
+					n = read_section(ws, row, fields, 'equity', currency, equity_holding)
 					row = row + n
 		
 		# move to next row
@@ -207,9 +206,11 @@ def read_bond_fields(ws, row):
 					# if the field name does not match any of the above, it
 					# means the format of the excel may have changed, new
 					# fields added, etc. Please change the code to handle it.
-					logger.error('read_bond_fields(): field name not handled {0} {1}'.
-									format(ws.cell_value(row+rows_read-1, column),
-											ws.cell_value(row+rows_read, column)))
+					logger.error('read_equity_fields(): field name not handled, at \
+									row {0}, column {1}, value = {0} {1}'.
+									format(row+rows_read, i, \
+											ws.cell_value(row+rows_read-1, i),
+											ws.cell_value(row+rows_read, i)))
 					raise ValueError('bad_field_name')
 
 			break	# finished reading the fields
@@ -218,6 +219,274 @@ def read_bond_fields(ws, row):
 		rows_read = rows_read + 1
 
 	return (fields, rows_read)
+
+
+
+def read_equity_fields(ws, row):
+	"""
+	Read the field names for the equity section.
+
+	number_of_shares, currency, listed_location, fx_on_trade_day, 
+	last_trade_date, average_cost, price, book_cost, market_value, 
+	market_gain_loss, fx_gain_loss
+
+	Note the equity section contains listed equity and preferred shares. 
+	For listed equity we'll see listed_location, but for preferred shares, 
+	this field is missing.	
+	"""
+	rows_read = 1
+	fields = []
+
+	while (row+rows_read < ws.nrows):
+			
+		# search the first column
+		cell_value = ws.cell_value(row+rows_read, 0)
+
+		if cell_value == 'Description':
+			for i in range(2, 17):
+				field_tuple = read_field_name(ws, row+rows_read, i)
+
+				if field_tuple == ('', ''):	# empty fields
+					fields.append('empty_field')
+				elif field_tuple[1] == 'Share':
+					fields.append('number_of_shares')
+				elif field_tuple[1] == 'CCY':
+					fields.append('currency')
+				elif field_tuple == ('Location', 'of Listed'):
+					fields.append('listed_location')
+				elif field_tuple == ('(AVG) FX', 'for TXN'):
+					fields.append('fx_on_trade_day')
+				elif field_tuple[1] == 'Latest V.D.':
+					fields.append('last_trade_date')
+				elif field_tuple == ('Avg.', 'Price'):
+					fields.append('average_cost')
+				elif field_tuple == ('Market', 'Price'):
+					fields.append('price')
+				elif field_tuple[1] == 'Book Cost':
+					fields.append('book_cost')
+				elif field_tuple == ('市價', 'M. Value'):
+					fields.append('market_value')
+				elif field_tuple == ('Gain/(Loss)', 'M. Value'):
+					fields.append('market_gain_loss')
+				elif field_tuple == ('FX', 'HKD Equiv.'):
+					fields.append('fx_gain_loss')
+				else:
+					# if the field name does not match any of the above, it
+					# means the format of the excel may have changed, new
+					# fields added, etc. Please change the code to handle it.
+					logger.error('read_equity_fields(): field name not handled, at \
+									row {0}, column {1}, value = {0} {1}'.
+									format(row+rows_read, i, \
+											ws.cell_value(row+rows_read-1, i),
+											ws.cell_value(row+rows_read, i)))
+					raise ValueError('bad_field_name')
+
+			break	# finished reading the fields
+
+		# move to next row
+		rows_read = rows_read + 1
+
+	return (fields, rows_read)
+
+
+
+def read_section(ws, row, fields, asset_class, currency, holding):
+	"""
+	Read a section in the worksheet (ws), starting on row number (row).
+	fields being the list of fields to read from column C. For example,
+	for HTM bond section, we expect to fields in the following order:
+
+		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
+		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+		amortized_cost, book_cost, interest_bought, amortized_value, 
+		accrued_interest, amortized_gain_loss, fx_gain_loss
+
+	for trading bonds, we expect to see fields in the following order:
+
+		par_amount, currency, is_listed, listed_location, fx_on_trade_day, 
+		coupon_rate, coupon_start_date, maturity_date, average_cost, 
+		price, book_cost, interest_bought, market_value, accrued_interest,
+		market_gain_loss, fx_gain_loss
+
+	for listed equity, we expect to see fields in the following order:
+
+		number_of_shares, currency, listed_location, fx_on_trade_day, 
+		empty_field, last_trade_date, empty_field, average_cost, price, 
+		book_cost, empty_field, market_value, empty_field, market_gain_loss, 
+		fx_gain_loss
+
+	for equity (preferred shares), we expect to see fields in the following order:
+		number_of_shares, currency, empty_field, fx_on_trade_day, 
+		empty_field, last_trade_date, empty_field, average_cost, price, 
+		book_cost, empty_field, market_value, empty_field, market_gain_loss, 
+		fx_gain_loss
+
+	Return the number of rows read in this function
+	"""
+	rows_read = 1
+
+	while (row+rows_read < ws.nrows):
+		cell_value = ws.cell_value(row+rows_read, 0)
+		
+		# logger.debug(cell_value)
+		if isinstance(cell_value, str) and cell_value.startswith('('):
+
+			# detect the start of a subsection
+			# a subsection looks like "(i) Held to Maturity (xxx)"
+			i = cell_value.find(')', 1, len(cell_value)-1)
+			if i > 0:	# the string looks like '(xxx) yyy'
+				temp_str = str.strip(cell_value[i+1:])
+				
+				# logger.debug(temp_str)
+				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
+					accounting_treatment = 'HTM'
+				
+				elif temp_str.startswith('Trading'):
+					accounting_treatment = 'Trading'
+
+				else:
+					# some other category other than HTM or Trading,
+					# Needs to implement
+					logger.error('read_section(): unhandled accounting treament \
+									at row {0} column 0, value = {1}'.
+									format(row+rows_read, cell_value))
+
+				n = read_sub_section(ws, row+rows_read, accounting_treatment, 
+										fields, asset_class, currency, holding)
+				rows_read = rows_read + n
+
+		elif isinstance(cell_value, str) and cell_value.startswith('Total'):
+			# the section ends
+			break
+
+		rows_read = rows_read + 1	# move to next row
+
+	return rows_read
+
+
+
+def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, holding):
+	"""
+	Read a sub section in the worksheet (ws), starting on row number (row).
+
+	Return the number of rows read in this function
+	"""
+	rows_read = 1
+	# logger.debug('currency {0}'.format(currency))
+	while (row+rows_read < ws.nrows):
+		cell_value = ws.cell_value(row+rows_read, 0)
+		
+		# logger.debug(cell_value)
+		if isinstance(cell_value, str) and cell_value.startswith('('):
+
+			# detect the start of a security holding position
+			# a holding position looks like "(xxx) security name"
+			i = cell_value.find(')', 1, len(cell_value)-1)
+			if i > 0:	# the string looks like '(xxx) yyy'
+				security = {}
+
+				# start populating fields of a security, then save it to the 
+				# security_holding list.
+				token = cell_value[1:i]
+				if (asset_class == 'bond'):
+					security['isin'] = token
+				elif (asset_class == 'equity'):
+					if ('listed_location') in fields:	# it's listed equity
+						security['ticker'] = token
+					else:								# it's preferred shares
+						security['isin'] = token
+				else:
+					logger.error('read_sub_section(): invalid asset class'.
+									format(asset_class))
+					raise ValueError('bad asset class')
+
+				security['name'] = cell_value
+				security['currency'] = currency
+				security['accounting_treatment'] = accounting_treatment
+
+				column = 2	# now start reading fields in column C
+				for field in fields:
+					cell_value = ws.cell_value(row+rows_read, column)
+					logger.debug(cell_value)
+
+					if field == 'empty_field':	# ignore this field, move on
+						column = column + 1
+						continue
+
+					elif field in ['is_listed', 'listed_location', 'currency']:
+						if isinstance(cell_value, str):
+							if field == 'currency' and 'currency 'in security \
+								and not cell_value == security['currency']:
+								# already has currency assigned, in the case
+								# of listed equity, but the currency value is
+								# inconsistent
+
+								logger.error('read_sub_section(): inconsistent \
+												currency value at row {0}, column \
+												{1}'.format(row+rows_read, column))
+								raise ValueError('bad currency value')
+
+
+						else:	# value is of wrong type:
+							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_str')
+
+						security[field] = cell_value
+
+					elif field in ['par_amount', 'number_of_shares', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
+									'amortized_cost', 'price', 'book_cost', 'interest_bought',
+									'amortized_value', 'market_value', 
+									'accrued_interest', 'amortized_gain_loss', 
+									'market_gain_loss', 'fx_gain_loss']:
+						
+						# treat empty cell as 0
+						if isinstance(cell_value, str) and str.strip(cell_value) == '':
+							cell_value = 0.0	# caution! must put 0.0 instead
+												# of 0 here, otherwise it will be
+												# classified as integer and fail
+												# the next 'if' test.
+
+						if isinstance(cell_value, float):
+							security[field] = cell_value
+
+							# if holding amount is zero, stop reading other 
+							# fields.
+							if (field == 'par_amount' or field == 'number_of_shares') \
+								and cell_value == 0:
+								logger.warning('read_security_sub_section(): holding amount = 0 for security: {0}'.
+												format(security['name']))
+								break
+
+						else:	# value is of wrong type:
+							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_float')
+
+					elif field in ['coupon_start_date', 'maturity_date', 'last_trade_date']:
+						if isinstance(cell_value, float):
+							datemode = get_datemode()
+							security[field] = xldate_as_datetime(cell_value, datemode)
+						else:	# value is of wrong type:
+							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
+											format(field, row+rows_read, column, cell_value))
+							raise TypeError('bad_field_type_float_date')
+
+
+					column = column + 1
+
+
+				holding.append(security)
+				# logger.debug(isin)
+
+		elif is_end_of_sub_section(ws, row+rows_read):
+			# the subsection ends
+			break
+
+		rows_read = rows_read + 1	# move to next row
+		# end of while loop
+
+	return rows_read
 
 
 
@@ -369,7 +638,7 @@ def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
 				bond_holding.append(bond)
 				# logger.debug(isin)
 
-		elif isinstance(cell_value, str) and str.strip(cell_value) == '':
+		elif is_end_of_sub_section(ws, row+rows_read):
 			# the subsection ends
 			break
 
@@ -379,6 +648,31 @@ def read_bond_sub_section(ws, row, category, fields, currency, bond_holding):
 
 
 
-def read_equity_section(ws, row):
+def is_end_of_sub_section(ws, row):
+	"""
+	Tell whether this is the end of the sub section.
+	
+	If the first 4 columns are all empty, then it is a blank line, then
+	it is the end of the sub section.
+	"""
+	for column in range(4):
+		if not is_empty_cell(ws, row, column):
+			return False
 
-	return 0
+	return True
+
+
+
+
+def is_empty_cell(ws, row, column):
+	"""
+	If the cell value is all white space or an empty string, then it is
+	an empty cell.
+	"""
+	cell_value = ws.cell_value(row, column)
+	if isinstance(cell_value, str) and str.strip(cell_value) == '':
+		return True
+	else:
+		return False
+
+	
