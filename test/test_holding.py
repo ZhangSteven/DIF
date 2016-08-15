@@ -37,7 +37,6 @@ class TestHolding(unittest2.TestCase):
         Test the read_bond_fields() method using holdings_sample2.xls,
         containing only one bond section with HTM bonds.
         """
-
         filename = get_current_path() + '\\samples\\holdings_sample2.xls'
         wb = open_workbook(filename=filename)
         ws = wb.sheet_by_name('Portfolio Val.')
