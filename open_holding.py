@@ -372,8 +372,14 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 	Return the number of rows read in this function
 	"""
+
+	# currently only handle these two types of asset class
+	if not asset_class in ['equity', 'bond']:
+		logger.error('read_sub_section(): invalid asset class'.format(asset_class))
+		raise ValueError('bad asset class')
+
 	rows_read = 1
-	# logger.debug('currency {0}'.format(currency))
+
 	while (row+rows_read < ws.nrows):
 		cell_value = ws.cell_value(row+rows_read, 0)
 		
@@ -396,10 +402,6 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 						security['ticker'] = token
 					else:								# it's preferred shares
 						security['isin'] = token
-				else:
-					logger.error('read_sub_section(): invalid asset class'.
-									format(asset_class))
-					raise ValueError('bad asset class')
 
 				security['name'] = cell_value
 				security['currency'] = currency
@@ -408,75 +410,34 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 				column = 2	# now start reading fields in column C
 				for field in fields:
 					cell_value = ws.cell_value(row+rows_read, column)
-					logger.debug(cell_value)
+					# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
 
-					if field == 'empty_field':	# ignore this field, move on
+					if field == 'empty_field':	# ignore this field, move to
+												# next column
 						column = column + 1
 						continue
 
-					elif field in ['is_listed', 'listed_location', 'currency']:
-						if isinstance(cell_value, str):
-							if field == 'currency' and 'currency 'in security \
-								and not cell_value == security['currency']:
-								# already has currency assigned, in the case
-								# of listed equity, but the currency value is
-								# inconsistent
+					field_value = validate_and_convert_field_value(field, cell_value)
 
-								logger.error('read_sub_section(): inconsistent \
-												currency value at row {0}, column \
-												{1}'.format(row+rows_read, column))
-								raise ValueError('bad currency value')
+					# if already has currency assigned (in the case of listed 
+					# equity), check whether the currency value is inconsistent
+					if field == 'currency' and 'currency 'in security \
+						and field_value != security['currency']:
+								
+						logger.error('read_sub_section(): inconsistent currency \
+							value at row {0}, column {1}'.format(row+rows_read, column))
+						raise ValueError('inconsistent currency value')
 
+					security[field] = field_value
 
-						else:	# value is of wrong type:
-							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_str')
-
-						security[field] = cell_value
-
-					elif field in ['par_amount', 'number_of_shares', 'fx_on_trade_day', 'coupon_rate', 'average_cost', 
-									'amortized_cost', 'price', 'book_cost', 'interest_bought',
-									'amortized_value', 'market_value', 
-									'accrued_interest', 'amortized_gain_loss', 
-									'market_gain_loss', 'fx_gain_loss']:
-						
-						# treat empty cell as 0
-						if isinstance(cell_value, str) and str.strip(cell_value) == '':
-							cell_value = 0.0	# caution! must put 0.0 instead
-												# of 0 here, otherwise it will be
-												# classified as integer and fail
-												# the next 'if' test.
-
-						if isinstance(cell_value, float):
-							security[field] = cell_value
-
-							# if holding amount is zero, stop reading other 
-							# fields.
-							if (field == 'par_amount' or field == 'number_of_shares') \
-								and cell_value == 0:
-								logger.warning('read_security_sub_section(): holding amount = 0 for security: {0}'.
-												format(security['name']))
-								break
-
-						else:	# value is of wrong type:
-							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_float')
-
-					elif field in ['coupon_start_date', 'maturity_date', 'last_trade_date']:
-						if isinstance(cell_value, float):
-							datemode = get_datemode()
-							security[field] = xldate_as_datetime(cell_value, datemode)
-						else:	# value is of wrong type:
-							logger.error('read_security_sub_section(): field {0} does not have a proper value type in row {1} column {2}, value {3}'.
-											format(field, row+rows_read, column, cell_value))
-							raise TypeError('bad_field_type_float_date')
-
+					# if holding amount is zero, stop reading other fields.
+					if (field == 'par_amount' or field == 'number_of_shares') \
+						and field_value == 0:
+						break
 
 					column = column + 1
-
-
+					# end of for loop
+					
 				holding.append(security)
 				# logger.debug(isin)
 
@@ -518,3 +479,50 @@ def is_empty_cell(ws, row, column):
 		return False
 
 	
+
+def validate_and_convert_field_value(field, cell_value):
+	"""
+	Validate the field value read is of proper type, if yes then convert it
+	to a proper value if necessary (e.g., an empty field to zero). If no,
+	then raise an exception.
+	"""
+
+	field_value = cell_value
+
+	# if the following field value type is not string, then
+	# something must be wrong
+	if field in ['is_listed', 'listed_location', 'currency'] \
+		and not isinstance(cell_value, str):
+		logger.error('validate_field_value(): field {0} \
+						should be a string: {1}'.format(field, cell_value))
+		raise ValueError('bad field type: not a string')
+
+	elif field in ['fx_on_trade_day', 'coupon_rate', 'average_cost', \
+					'amortized_cost', 'price', 'book_cost', 'interest_bought', \
+					'amortized_value', 'market_value', 'accrued_interest', \
+					'amortized_gain_loss', 'market_gain_loss', 'fx_gain_loss', \
+					'coupon_start_date', 'maturity_date', 'last_trade_date'] \
+		and not isinstance(cell_value, float):
+		logger.error('validate_field_value(): field {0} \
+						should be a float: {1}'.format(field, cell_value))
+		raise ValueError('bad field type: not a float')
+
+	elif field in ['par_amount', 'number_of_shares']:
+		if isinstance(cell_value, float):
+			# OK, no change
+			pass
+		elif isinstance(cell_value, str) and str.strip(cell_value) == '':
+			# treat an empty holding as zero
+			field_value = 0
+		else:
+			logger.error('validate_field_value(): field {0} \
+						should be a float or empty string: {1}'.
+						format(field, cell_value))
+			raise ValueError('bad field type: not a float or empty string')
+
+	# convert float to python datetime object when necessary
+	if field in ['coupon_start_date', 'maturity_date', 'last_trade_date']:
+		datemode = get_datemode()
+		field_value = xldate_as_datetime(cell_value, datemode)
+
+	return field_value

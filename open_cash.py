@@ -42,8 +42,7 @@ def read_cash(ws, port_values, datemode=0):
 
 	cash_accounts = port_values['cash_accounts']	# get all cash accounts
 
-	for id in cash_accounts:
-		cash_account = cash_accounts[id]	# use integer as key
+	for cash_account in cash_accounts:
 		
 		bank = cash_account['bank']			# retrieve bank name
 		account_num = cash_account['account_num']	# retrieve account number
@@ -73,8 +72,7 @@ def read_cash(ws, port_values, datemode=0):
 
 	# to store cash account information read from this worksheet
 	this_account = {}
-	id = len(cash_accounts.keys()) + 1
-	cash_accounts[id] = this_account
+	cash_accounts.append(this_account)
 
 	for row in range(ws.nrows):
 				
@@ -110,25 +108,6 @@ def read_cash(ws, port_values, datemode=0):
 				this_account['hkd_equivalent'] = get_value(row)
 
 	logger.debug('out of read_cash()')
-
-
-
-def show_cash_accounts(port_values):
-	cash_accounts = port_values['cash_accounts']
-
-	for id in cash_accounts:
-		cash_account = cash_accounts[id]	# use account_number as key
-		
-		bank = cash_account['bank']			# retrieve bank name
-		account_num = cash_account['account_num']	# retrieve account number
-		date = cash_account['date']			# retrieve date
-		balance = cash_account['balance']	# retrieve balance
-		currency = cash_account['currency']	# retrieve currency
-		account_type = cash_account['account_type']			# retrieve account type
-		fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
-		HKD_equivelant = cash_account['hkd_equivalent']	# retrieve amount in HKD
-		print(bank, date, account_num, account_type, currency, 
-				balance, fx_rate, HKD_equivelant)
 
 
 

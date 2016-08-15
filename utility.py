@@ -119,10 +119,8 @@ def retrieve_or_create(port_values, key):
 	if key in port_values:	# key exists, retrieve
 		holding = port_values[key]	
 	else:					# key doesn't exist, create
-		if key == 'bond' or key == 'equity':
+		if key in ['bond', 'equity', 'cash_accounts']:
 			holding = []
-		elif key == 'cash_accounts':
-			holding = {}
 		else:
 			# not implemented yet
 			logger.error('retrieve_or_create(): invalid key: {0}'.format(key))

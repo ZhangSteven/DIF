@@ -33,13 +33,6 @@ To do:
 
 1. Add test cases for error conditions in open_holding.py
 
-2. Change interfaces for cash reading, make it:
-
-	for cash_account in cash_accounts:
-		... access cash_account information ...
-
-	This way, the interface for cash, bond holding and equity holding will be more consistent.
-
 
 
 +++++++++

@@ -18,8 +18,8 @@
 # nav = port_values['nav']
 #
 # cash_accounts = port_values['cash_accounts']
-# for id in cash_accounts:
-#	....
+# equity_holding = port_values['equity']
+# bond_holding = port_values['bond']
 # 
 
 from xlrd import open_workbook
@@ -72,6 +72,3 @@ def open_excel(file_name, port_values):
 	if (count == 0):
 		logger.error('open_excel(): Failed to find cash sheets')
 		raise Exception('no cash sheet')	# indicate something wrong
-
-	# verify we have read the correct value
-	# show_cash_accounts(port_values)

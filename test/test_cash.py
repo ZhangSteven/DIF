@@ -44,6 +44,18 @@ class TestCash(unittest2.TestCase):
 
 
 
+    def extract_cash_account(self, cash_accounts, currency):
+        """
+        Extract cash account based on currency.
+        """
+        for cash_account in cash_accounts:
+            if cash_account['currency'] == currency:
+                return cash_account
+
+        return {}
+
+
+
     def test_hkd(self):
         """
         Test the HKD cash account.
@@ -53,9 +65,9 @@ class TestCash(unittest2.TestCase):
         cash_accounts = self.port_values['cash_accounts']
         self.assertEqual(len(cash_accounts), 4) # read in 4 sheets
 
-        cash_account = cash_accounts[1]     # the first sheet is "HKD"
-      
-        self.assertEqual(cash_account['currency'], 'HKD')
+        cash_account = self.extract_cash_account(cash_accounts, 'HKD')
+        self.assertNotEqual(cash_account, {})
+ 
         self.assertEqual(cash_account['account_num'], '012-875-0-053124-1')
         self.assertEqual(cash_account['account_type'], 'Current Account')
         self.assertEqual(cash_account['bank'], 'Bank of China (Hong Kong) Ltd')
@@ -71,9 +83,9 @@ class TestCash(unittest2.TestCase):
         Test the USD cash account.
         """
         cash_accounts = self.port_values['cash_accounts']
-        cash_account = cash_accounts[2]     # the first sheet is "USD"
-      
-        self.assertEqual(cash_account['currency'], 'USD')
+        cash_account = self.extract_cash_account(cash_accounts, 'USD')
+        self.assertNotEqual(cash_account, {})
+
         self.assertEqual(cash_account['account_num'], '012-875-0-804911-9')
         self.assertEqual(cash_account['account_type'], 'Current Account')
         self.assertEqual(cash_account['bank'], 'Bank of China (Hong Kong) Ltd')
@@ -90,9 +102,9 @@ class TestCash(unittest2.TestCase):
         Test the CNY cash account.
         """
         cash_accounts = self.port_values['cash_accounts']
-        cash_account = cash_accounts[3]     # the first sheet is "CNY"
-      
-        self.assertEqual(cash_account['currency'], 'CNY')
+        cash_account = self.extract_cash_account(cash_accounts, 'CNY')
+        self.assertNotEqual(cash_account, {})
+
         self.assertEqual(cash_account['account_num'], '012-875-0-603962-0')
         self.assertEqual(cash_account['account_type'], 'Current Account')
         self.assertEqual(cash_account['bank'], 'Bank of China (Hong Kong) Ltd')
@@ -109,9 +121,9 @@ class TestCash(unittest2.TestCase):
         Test the SGD cash account.
         """
         cash_accounts = self.port_values['cash_accounts']
-        cash_account = cash_accounts[4]     # the first sheet is "SGD"
-      
-        self.assertEqual(cash_account['currency'], 'SGD')
+        cash_account = self.extract_cash_account(cash_accounts, 'SGD')
+        self.assertNotEqual(cash_account, {})
+
         self.assertEqual(cash_account['account_num'], '012-875-0-604032-3')
         self.assertEqual(cash_account['account_type'], 'Current Account')
         self.assertEqual(cash_account['bank'], 'Bank of China (Hong Kong) Ltd')
