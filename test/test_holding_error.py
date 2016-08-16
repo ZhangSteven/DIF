@@ -32,7 +32,7 @@ class TestHoldingError(unittest2.TestCase):
 
 
 
-    def foo(self):
+    def foo(self, x):
         raise ValueError('test')
 
 
@@ -49,8 +49,11 @@ class TestHoldingError(unittest2.TestCase):
         """
 
         # verify that ValueError happens
+        self.assertRaises(ValueError, self.foo, 5)
+
+        # Or we can use the context manager
         with self.assertRaises(ValueError) as cm:
-            self.foo()
+            self.foo(5)
 
         # verify that the string representation is 'test'
         the_exception = cm.exception
@@ -59,147 +62,44 @@ class TestHoldingError(unittest2.TestCase):
         # Or similarly, verfiy that ValueError happens whose string
         # representation matches a regular expression. Note this is
         # not exactly the same as the above.
+        self.assertRaisesRegexp(ValueError, 'es', self.foo, 5)
+
+        # same as the above
         with self.assertRaisesRegexp(ValueError, 'es'):
-            self.foo()
+            self.foo(5)
 
         # also true
         with self.assertRaisesRegexp(ValueError, 'test'):
-            self.foo()
+            self.foo(5)
 
-        # won't pass, becuase no exception is generated.
+        # fails, becuase no exception is generated.
         # self.assertRaises(Exception, self.bar)
 
 
 
-    # def test_read_bond_fields_HTM(self):
-    #     """
-    #     Test the read_bond_fields() method using holdings_sample2.xls,
-    #     containing only one bond section with HTM bonds.
-    #     """
-    #     filename = get_current_path() + '\\samples\\holdings_sample2.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 62    # the bond section starts at A63
+    def test_read_sub_section_error1(self):
+        """
+        Test the HTM bonds
+        """
+        filename = get_current_path() + '\\samples\\holdings_error1.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 68    # the bond sub section starts at A69
+        accounting_treatment = 'HTM'
+        fields = ['par_amount', 'is_listed', 'listed_location', 
+                    'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                    'maturity_date', 'average_cost', 'amortized_cost', 
+                    'book_cost', 'interest_bought', 'amortized_value', 
+                    'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
+        asset_class = 'bond'
+        currency = 'USD'
+        bond_holding = []
 
-    #     fields, n = read_bond_fields(ws, row)
-    #     self.assertEqual(n, 4)
-    #     self.assertEqual(len(fields), 15)
+        with self.assertRaisesRegexp(ValueError, 'bad field type: not a string'):
+            read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
 
-    #     f = ''
-    #     for s in fields:
-    #         f = f + s + ', '
+        self.assertEqual(len(bond_holding), 2)  # the first 2 bond positions are OK
 
-    #     # check the fields are read correctly
-    #     self.assertEqual(f, 
-    #         'par_amount, is_listed, listed_location, fx_on_trade_day, coupon_rate, coupon_start_date, maturity_date, average_cost, amortized_cost, book_cost, interest_bought, amortized_value, accrued_interest, amortized_gain_loss, fx_gain_loss, ')
-
-
-
-    # def test_read_bond_fields_trading(self):
-    #     """
-    #     Test the read_bond_fields() method using holdings_sample3.xls,
-    #     containing only one bond section with trading bonds.
-    #     """
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample3.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 114    # the bond section starts at A115
-
-    #     fields, n = read_bond_fields(ws, row)
-    #     self.assertEqual(n, 4)
-    #     self.assertEqual(len(fields), 15)
-
-    #     f = ''
-    #     for s in fields:
-    #         f = f + s + ', '
-
-    #     # check the fields are read correctly
-    #     self.assertEqual(f, 
-    #         'par_amount, is_listed, listed_location, fx_on_trade_day, coupon_rate, coupon_start_date, maturity_date, average_cost, price, book_cost, interest_bought, market_value, accrued_interest, market_gain_loss, fx_gain_loss, ')
-
-
-
-    # def test_read_equity_fields_listed(self):
-    #     """
-    #     Test the read_equity_fields() method with listed eqiuty.
-    #     """
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample_equity1.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 275    # the bond section starts at A276
-
-    #     fields, n = read_equity_fields(ws, row)
-    #     self.assertEqual(n, 5)
-    #     self.assertEqual(len(fields), 15)
-
-    #     f = ''
-    #     for s in fields:
-    #         f = f + s + ', '
-
-    #     # check the fields are read correctly
-    #     self.assertEqual(f, 
-    #         'number_of_shares, currency, listed_location, fx_on_trade_day, empty_field, last_trade_date, empty_field, average_cost, price, book_cost, empty_field, market_value, empty_field, market_gain_loss, fx_gain_loss, ')
-
-
-    # def test_read_equity_fields_preferred_shares(self):
-    #     """
-    #     Test the read_equity_fields() method with listed eqiuty.
-    #     """
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample_equity2.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 301    # the bond section starts at A302
-
-    #     fields, n = read_equity_fields(ws, row)
-    #     self.assertEqual(n, 3)
-    #     self.assertEqual(len(fields), 15)
-
-    #     f = ''
-    #     for s in fields:
-    #         f = f + s + ', '
-
-    #     # check the fields are read correctly
-    #     self.assertEqual(f, 
-    #         'number_of_shares, currency, empty_field, fx_on_trade_day, empty_field, last_trade_date, empty_field, average_cost, price, book_cost, empty_field, market_value, empty_field, market_gain_loss, fx_gain_loss, ')
-
-
-
-    # def test_read_currency(self):
-    #     msg = 'V. Debt Securities - US$  (債務票據- 美元)'
-    #     self.assertEqual(read_currency(msg), 'USD')
-
-    #     msg = 'V. Debt Securities - SGD  (債務票據- 星加坡元)'
-    #     self.assertEqual(read_currency(msg), 'SGD')
-        
-    #     msg = 'X. Equities - USD (股票-美元)'
-    #     self.assertEqual(read_currency(msg), 'USD')
-
-
-
-    # def test_read_sub_section_bond_HTM(self):
-    #     """
-    #     Test the HTM bonds
-    #     """
-    #     filename = get_current_path() + '\\samples\\holdings_sample2.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 68    # the bond sub section starts at A69
-    #     accounting_treatment = 'HTM'
-    #     fields = ['par_amount', 'is_listed', 'listed_location', 
-    #                 'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
-    #                 'maturity_date', 'average_cost', 'amortized_cost', 
-    #                 'book_cost', 'interest_bought', 'amortized_value', 
-    #                 'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
-    #     asset_class = 'bond'
-    #     currency = 'USD'
-    #     bond_holding = []
-
-    #     read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
-
-    #     self.validate_bond_HTM(bond_holding)
 
 
 
