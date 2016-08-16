@@ -348,8 +348,7 @@ def read_section(ws, row, fields, asset_class, currency, holding):
 				else:
 					# some other category other than HTM or Trading,
 					# Needs to implement
-					logger.error('read_section(): unhandled accounting treament \
-									at row {0} column 0, value = {1}'.
+					logger.error('read_section(): unhandled accounting treament at row {0} column 0, value = {1}'.
 									format(row+rows_read, cell_value))
 
 				n = read_sub_section(ws, row+rows_read, accounting_treatment, 
@@ -421,11 +420,11 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 					# if already has currency assigned (in the case of listed 
 					# equity), check whether the currency value is inconsistent
-					if field == 'currency' and 'currency 'in security \
+					if field == 'currency' and 'currency'in security \
 						and field_value != security['currency']:
 								
-						logger.error('read_sub_section(): inconsistent currency \
-							value at row {0}, column {1}'.format(row+rows_read, column))
+						logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
+										format(row+rows_read, column))
 						raise ValueError('inconsistent currency value')
 
 					security[field] = field_value
@@ -493,8 +492,8 @@ def validate_and_convert_field_value(field, cell_value):
 	# something must be wrong
 	if field in ['is_listed', 'listed_location', 'currency'] \
 		and not isinstance(cell_value, str):
-		logger.error('validate_field_value(): field {0} \
-						should be a string: {1}'.format(field, cell_value))
+		logger.error('validate_field_value(): field {0} should be a string: {1}'.
+						format(field, cell_value))
 		raise ValueError('bad field type: not a string')
 
 	elif field in ['fx_on_trade_day', 'coupon_rate', 'average_cost', \
@@ -503,8 +502,8 @@ def validate_and_convert_field_value(field, cell_value):
 					'amortized_gain_loss', 'market_gain_loss', 'fx_gain_loss', \
 					'coupon_start_date', 'maturity_date', 'last_trade_date'] \
 		and not isinstance(cell_value, float):
-		logger.error('validate_field_value(): field {0} \
-						should be a float: {1}'.format(field, cell_value))
+		logger.error('validate_field_value(): field {0} should be a float: {1}'.
+						format(field, cell_value))
 		raise ValueError('bad field type: not a float')
 
 	elif field in ['par_amount', 'number_of_shares']:
@@ -515,8 +514,7 @@ def validate_and_convert_field_value(field, cell_value):
 			# treat an empty holding as zero
 			field_value = 0
 		else:
-			logger.error('validate_field_value(): field {0} \
-						should be a float or empty string: {1}'.
+			logger.error('validate_field_value(): field {0} should be a float or empty string: {1}'.
 						format(field, cell_value))
 			raise ValueError('bad field type: not a float or empty string')
 

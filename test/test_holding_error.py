@@ -101,6 +101,81 @@ class TestHoldingError(unittest2.TestCase):
         self.assertEqual(len(bond_holding), 2)  # the first 2 bond positions are OK
 
 
+    def test_read_sub_section_error2(self):
+        """
+        Test the HTM bonds
+        """
+        filename = get_current_path() + '\\samples\\holdings_error2.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 68    # the bond sub section starts at A69
+        accounting_treatment = 'HTM'
+        fields = ['par_amount', 'is_listed', 'listed_location', 
+                    'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                    'maturity_date', 'average_cost', 'amortized_cost', 
+                    'book_cost', 'interest_bought', 'amortized_value', 
+                    'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
+        asset_class = 'bond'
+        currency = 'USD'
+        bond_holding = []
+
+        with self.assertRaisesRegexp(ValueError, 'bad field type: not a float'):
+            read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
+
+        self.assertEqual(len(bond_holding), 6)  # the first 2 bond positions are OK
+
+
+
+    def test_read_sub_section_error3(self):
+        """
+        Test the HTM bonds
+        """
+        filename = get_current_path() + '\\samples\\holdings_error3.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 68    # the bond sub section starts at A69
+        accounting_treatment = 'HTM'
+        fields = ['par_amount', 'is_listed', 'listed_location', 
+                    'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                    'maturity_date', 'average_cost', 'amortized_cost', 
+                    'book_cost', 'interest_bought', 'amortized_value', 
+                    'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
+        asset_class = 'bond'
+        currency = 'USD'
+        bond_holding = []
+
+        with self.assertRaisesRegexp(ValueError, 'bad field type: not a float or empty string'):
+            read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
+
+        self.assertEqual(len(bond_holding), 6)  # the first 2 bond positions are OK
+
+
+
+    def test_read_sub_section_error4(self):
+        """
+        Test the HTM bonds
+        """
+        filename = get_current_path() + '\\samples\\holdings_error4.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 282    # the bond sub section starts at A283
+        accounting_treatment = 'Trading'
+        fields = ['number_of_shares', 'currency', 'listed_location', 
+                    'fx_on_trade_day', 'empty_field', 'last_trade_date', 
+                    'empty_field', 'average_cost', 'price', 'book_cost', 
+                    'empty_field', 'market_value', 'empty_field', 
+                    'market_gain_loss', 'fx_gain_loss']
+        asset_class = 'equity'
+        currency = 'HKD'
+        equity_holding = []
+
+        with self.assertRaisesRegexp(ValueError, 'inconsistent currency value'):
+            read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, equity_holding)
+
+        self.assertEqual(len(equity_holding), 2)  # the first 2 equity positions are OK
+        										  # note: A285 is not treated as a position
+        										  # A286 has amount zero, therefore currency
+        										  # is not read at all.
 
 
     # def test_read_sub_section_bond_trading(self):
