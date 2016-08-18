@@ -153,7 +153,7 @@ class TestHoldingError(unittest2.TestCase):
 
     def test_read_sub_section_error4(self):
         """
-        Test the HTM bonds
+        Test the equity with inconsistent currency value
         """
         filename = get_current_path() + '\\samples\\holdings_error4.xls'
         wb = open_workbook(filename=filename)
@@ -178,211 +178,106 @@ class TestHoldingError(unittest2.TestCase):
         										  # is not read at all.
 
 
-    # def test_read_sub_section_bond_trading(self):
-    #     """
-    #     Test the trading bonds
-    #     """
-    #     filename = get_current_path() + '\\samples\\holdings_sample3.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 120    # the bond sub section starts at A121
 
-    #     accounting_treatment = 'Trading'
+    def test_read_equity_field_error1(self):
+        """
+        Test bad field name type
+        """
+        filename = get_current_path() + '\\samples\\holdings_error5.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 275    # the equity section starts at A276
+
+        with self.assertRaisesRegexp(TypeError, 'bad field name type'):
+            read_equity_fields(ws, row)
+
+
+
+    def test_read_equity_field_error2(self):
+        """
+        Test bad field name (equity)
+        """
+        filename = get_current_path() + '\\samples\\holdings_error6.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 275    # the equity section starts at A276
+
+        # the field name is not handled
+        with self.assertRaisesRegexp(ValueError, 'bad field name'):
+            read_equity_fields(ws, row)
+
+
+
+    def test_read_bond_field_error1(self):
+        """
+        Test bad field name type
+        """
+        filename = get_current_path() + '\\samples\\holdings_error7.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 62    # the bond section starts at A63
+
+        with self.assertRaisesRegexp(TypeError, 'bad field name type'):
+            read_bond_fields(ws, row)
+
+
+
+    def test_read_bond_field_error2(self):
+        """
+        Test bad field name (bond)
+        """
+        filename = get_current_path() + '\\samples\\holdings_error8.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 62    # the bond section starts at A63
+
+        with self.assertRaisesRegexp(ValueError, 'bad field name'):
+            read_bond_fields(ws, row)
+
+
+
+    def test_read_section_error1(self):
+        """
+        Test bad accounting treatment (bond)
+        """
+        filename = get_current_path() + '\\samples\\holdings_error9.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 62    # the bond section starts at A63
+
+        fields = ['par_amount', 'is_listed', 'listed_location', 
+                    'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                    'maturity_date', 'average_cost', 'amortized_cost', 
+                    'book_cost', 'interest_bought', 'amortized_value', 
+                    'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
+        asset_class = 'bond'
+        currency = 'USD'
+        bond_holding = []
+
+        with self.assertRaisesRegexp(ValueError, 'bad accounting treatment'):
+            read_section(ws, row, fields, asset_class, currency, bond_holding)
+
+
+
+    def test_read_section_error2(self):
+        """
+        Test bad asset class (bond)
+        """
+        filename = get_current_path() + '\\samples\\holdings_error10.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+        row = 62    # the bond section starts at A63
+
+        fields = ['par_amount', 'is_listed', 'listed_location', 
+                    'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                    'maturity_date', 'average_cost', 'amortized_cost', 
+                    'book_cost', 'interest_bought', 'amortized_value', 
+                    'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
         
-    #     # fields for trading bonds
-    #     fields = ['par_amount', 'is_listed', 'listed_location', 
-    #                 'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
-    #                 'maturity_date', 'average_cost', 'price', 
-    #                 'book_cost', 'interest_bought', 'market_value', 
-    #                 'accrued_interest', 'market_gain_loss', 'fx_gain_loss']
-    #     asset_class = 'bond'
-    #     currency = 'USD'
-    #     bond_holding = []
-
-    #     read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
-
-    #     self.validate_bond_trading(bond_holding)
-
-
-    # def test_read_section_bond(self):
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample3.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 114    # the bond section starts at A115
-
-    #     # fields for trading bonds
-    #     fields = ['par_amount', 'is_listed', 'listed_location', 
-    #                 'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
-    #                 'maturity_date', 'average_cost', 'price', 
-    #                 'book_cost', 'interest_bought', 'market_value', 
-    #                 'accrued_interest', 'market_gain_loss', 'fx_gain_loss']
-    #     asset_class = 'bond'
-    #     currency = 'USD'
-    #     bond_holding = []
-
-    #     read_section(ws, row, fields, asset_class, currency, bond_holding)
-    #     self.validate_bond_trading(bond_holding)
+        asset_class = 'Bond'	# it should be 'bond', this creates an error
         
+        currency = 'USD'
+        bond_holding = []
 
-
-    # def test_read_section_listed_equity(self):
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample_equity1.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 275    # the equity section starts at A276
-
-    #     # fields for trading bonds
-    #     fields = ['number_of_shares', 'currency', 'listed_location', 
-    #                 'fx_on_trade_day', 'empty_field', 'last_trade_date', 
-    #                 'empty_field', 'average_cost', 'price', 'book_cost', 
-    #                 'empty_field', 'market_value', 'empty_field', 
-    #                 'market_gain_loss', 'fx_gain_loss']
-    #     asset_class = 'equity'
-    #     currency = 'HKD'
-    #     equity_holding = []
-
-    #     read_section(ws, row, fields, asset_class, currency, equity_holding)
-
-    #     self.validate_listed_equity(equity_holding)
-        
-
-    # def test_read_section_preferred_shares(self):
-
-    #     filename = get_current_path() + '\\samples\\holdings_sample_equity2.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-    #     row = 301    # the equity section starts at A302
-
-    #     # fields for trading bonds
-    #     fields = ['number_of_shares', 'currency', 'empty_field', 
-    #                 'fx_on_trade_day', 'empty_field', 'last_trade_date', 
-    #                 'empty_field', 'average_cost', 'price', 'book_cost', 
-    #                 'empty_field', 'market_value', 'empty_field', 
-    #                 'market_gain_loss', 'fx_gain_loss']
-    #     asset_class = 'equity'
-    #     currency = 'USD'
-    #     equity_holding = []
-
-    #     read_section(ws, row, fields, asset_class, currency, equity_holding)
-
-    #     self.validate_preferred_shares(equity_holding)
-
-
-
-    # def test_open_holding_all(self):
-    #     """
-    #     Read the holding file, the statistics are:
-
-    #     Bond        
-    #                     total   zero holding
-    #     USD (HTM)       25      2
-    #     USD (Trading)   61      39
-    #     SGD (HTM)       10      10
-    #     SGD (Trading)   1       1
-    #     CNY (HTM)       2       0
-    #     CNY (Trading)   15      13
-    #     total           114     65
-                
-    #     Equity      
-    #                     total   zero holding
-    #     HKD             10      5
-    #     USD             4       2       
-    #     total           14      7
-    #     """
-    #     filename = get_current_path() + '\\samples\\holdings_sample.xls'
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
-
-    #     port_values = {}
-    #     read_holding(ws, port_values)
-
-    #     bond_holding = port_values['bond']
-    #     self.assertEqual(len(bond_holding), 114)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding), 65)
-
-    #     equity_holding = port_values['equity']
-    #     self.assertEqual(len(equity_holding), 14)
-    #     self.assertEqual(self.count_zero_holding_equity(equity_holding), 7)
-
-    #     bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM')
-    #     self.validate_bond_HTM(bond_holding_HTM_USD)
-
-    #     bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading')
-    #     self.validate_bond_trading(bond_holding_Trading_USD)
-
-    #     bond_holding_HTM_SGD = self.extract_bond_holding(bond_holding, 'SGD', 'HTM')
-    #     self.assertEqual(len(bond_holding_HTM_SGD), 10)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding_HTM_SGD), 10)
-
-    #     bond_holding_Trading_SGD = self.extract_bond_holding(bond_holding, 'SGD', 'Trading')
-    #     self.assertEqual(len(bond_holding_Trading_SGD), 1)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding_Trading_SGD), 1)
-
-    #     bond_holding_HTM_CNY = self.extract_bond_holding(bond_holding, 'CNY', 'HTM')
-    #     self.assertEqual(len(bond_holding_HTM_CNY), 2)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding_HTM_CNY), 0)
-
-    #     bond_holding_Trading_CNY = self.extract_bond_holding(bond_holding, 'CNY', 'Trading')
-    #     self.assertEqual(len(bond_holding_Trading_CNY), 15)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding_Trading_CNY), 13)
-
-    #     equity_holding_listed = self.extract_equity_holding(equity_holding, 'HKD')
-    #     self.validate_listed_equity(equity_holding_listed)
-
-    #     equity_holding_preferred_shares = self.extract_equity_holding(equity_holding, 'USD')
-    #     self.validate_preferred_shares(equity_holding_preferred_shares)
-
-
-
-    # def extract_bond_holding(self, bond_holding, currency, accounting_treatment):
-    #     """
-    #     Extract bond holding given its currency and accounting treatment.
-    #     """
-    #     holding = []
-    #     for bond in bond_holding:
-    #         if bond['currency'] == currency and \
-    #             bond['accounting_treatment'] == accounting_treatment:
-    #             holding.append(bond)
-
-    #     return holding
-
-
-
-    # def extract_equity_holding(self, equity_holding, currency):
-    #     """
-    #     Extract equity holding given its currency.
-    #     """
-    #     holding = []
-    #     for equity in equity_holding:
-    #         if equity['currency'] == currency:
-    #             holding.append(equity)
-
-    #     return holding
-
-
-
-    # def count_zero_holding_bond(self, bond_holding):
-    #     """
-    #     Count how many bonds in the holding has zero amount (par_amount).
-    #     """
-    #     empty_bond = 0
-    #     for bond in bond_holding:
-    #         if bond['par_amount'] == 0:
-    #             empty_bond = empty_bond + 1
-
-    #     return empty_bond
-
-
-
-    # def count_zero_holding_equity(self, equity_holding):
-    #     """
-    #     Count how many equity in the holding has zero amount (number_of_shares).
-    #     """
-    #     empty_equity = 0
-    #     for equity in equity_holding:
-    #         if equity['number_of_shares'] == 0:
-    #             empty_equity = empty_equity + 1
-
-    #     return empty_equity
+        with self.assertRaisesRegexp(ValueError, 'bad asset class'):
+            read_section(ws, row, fields, asset_class, currency, bond_holding)

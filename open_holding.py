@@ -131,11 +131,11 @@ def read_field_name(ws, row, column):
 	if isinstance(fld1, str) and isinstance(fld2, str):
 		field = (str.strip(fld1), str.strip(fld2))
 	else:
-		logger.error('read_field_name(): invalid type in position {0}, {1}'.
-						format(row, column))
-		raise TypeError('read_field_type')
+		logger.error('read_field_name(): invalid type in row {0}, {1} column {2}'.
+						format(row-1, row, column))
+		raise TypeError('bad field name type {0}, {1}'.format(fld1, fld2))
 
-	logger.debug(field)
+	# logger.debug(field)
 	return field
 
 
@@ -207,12 +207,10 @@ def read_bond_fields(ws, row):
 					# if the field name does not match any of the above, it
 					# means the format of the excel may have changed, new
 					# fields added, etc. Please change the code to handle it.
-					logger.error('read_equity_fields(): field name not handled, at \
-									row {0}, column {1}, value = {0} {1}'.
-									format(row+rows_read, i, \
-											ws.cell_value(row+rows_read-1, i),
+					logger.error('read_equity_fields(): field name not handled, at row {0}, column {1}, value = {2} {3}'.
+									format(row+rows_read, i, ws.cell_value(row+rows_read-1, i),
 											ws.cell_value(row+rows_read, i)))
-					raise ValueError('bad_field_name')
+					raise ValueError('bad field name')
 
 			break	# finished reading the fields
 
@@ -275,12 +273,11 @@ def read_equity_fields(ws, row):
 					# if the field name does not match any of the above, it
 					# means the format of the excel may have changed, new
 					# fields added, etc. Please change the code to handle it.
-					logger.error('read_equity_fields(): field name not handled, at \
-									row {0}, column {1}, value = {0} {1}'.
+					logger.error('read_equity_fields(): field name not handled, at row {0}, column {1}, value = {2} {3}'.
 									format(row+rows_read, i, \
 											ws.cell_value(row+rows_read-1, i),
 											ws.cell_value(row+rows_read, i)))
-					raise ValueError('bad_field_name')
+					raise ValueError('bad field name')
 
 			break	# finished reading the fields
 
@@ -350,6 +347,7 @@ def read_section(ws, row, fields, asset_class, currency, holding):
 					# Needs to implement
 					logger.error('read_section(): unhandled accounting treament at row {0} column 0, value = {1}'.
 									format(row+rows_read, cell_value))
+					raise ValueError('bad accounting treatment')
 
 				n = read_sub_section(ws, row+rows_read, accounting_treatment, 
 										fields, asset_class, currency, holding)
@@ -374,7 +372,7 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 	# currently only handle these two types of asset class
 	if not asset_class in ['equity', 'bond']:
-		logger.error('read_sub_section(): invalid asset class'.format(asset_class))
+		logger.error('read_sub_section(): invalid asset class: {0}'.format(asset_class))
 		raise ValueError('bad asset class')
 
 	rows_read = 1
