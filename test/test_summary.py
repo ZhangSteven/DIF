@@ -9,7 +9,7 @@ import unittest2
 import datetime
 from xlrd import open_workbook
 from DIF.utility import get_current_path
-from DIF.open_summary import read_portfolio_summary
+from DIF.open_summary import read_portfolio_summary, read_date, find_cell_string
 
 class TestCash(unittest2.TestCase):
 
@@ -29,6 +29,28 @@ class TestCash(unittest2.TestCase):
             Run after a test finishes
         """
         pass
+
+
+    def test_find_cell_string(self):
+        filename = get_current_path() + '\\samples\\summary_sample.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Sum.')
+
+        n = find_cell_string(ws, 0, 1, 'Valuation Period :')
+        self.assertEqual(n, 5)
+
+
+
+    def test_read_date(self):
+        """
+        Test the read_date() function.
+        """
+        filename = get_current_path() + '\\samples\\summary_sample.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Sum.')
+        port_values = {}
+        d = read_date(ws, 5, 1)
+        self.assertEqual(d, datetime.datetime(2015,12,10))
 
 
 
@@ -66,19 +88,22 @@ class TestCash(unittest2.TestCase):
         wb = open_workbook(filename=filename)
         ws = wb.sheet_by_name('Portfolio Sum.')
 
-        try:
-            read_portfolio_summary(ws, self.port_values)
-        except ValueError as e:
-            # expected to have this error with the message 'date'
-            self.assertEqual(str(e), 'date')
-        except Exception:
-            # if error other ValueError occurs, then something must
-            # be wrong
-            self.assertEqual('something is worng', 0)
-        else:
-            # if error does not occur, then something must be wrong
-            # because the cell has a wrong value. (B6)
-            self.assertEqual('something is worng', 1)
+        with self.assertRaises(TypeError):
+            read_date(ws, 5, 1)
+
+        # try:
+        #     read_portfolio_summary(ws, self.port_values)
+        # except ValueError as e:
+        #     # expected to have this error with the message 'date'
+        #     self.assertEqual(str(e), 'date')
+        # except Exception:
+        #     # if error other ValueError occurs, then something must
+        #     # be wrong
+        #     self.assertEqual('something is worng', 0)
+        # else:
+        #     # if error does not occur, then something must be wrong
+        #     # because the cell has a wrong value. (B6)
+        #     self.assertEqual('something is worng', 1)
 
 
 
