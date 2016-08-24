@@ -20,6 +20,20 @@ class InvalidExpenseItem(Exception):
 
 
 
+class ExpenseTotalNotMatch(Exception):
+	"""
+	To indicate when the sum of expense items does not equal to the
+	sub total read from the spread sheet.
+	"""
+	pass
+
+
+
+class InconsistentExpenseDate(Exception):
+	pass
+
+
+
 def read_expense(ws, port_values):
 	"""
 	Read the expenses worksheet. To use the function:
@@ -32,15 +46,16 @@ def read_expense(ws, port_values):
 	"""
 	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
 	expense_date = read_date(ws, row, 1)
-
-	n = find_cell_string(ws, 0, 0, 'Value Date')
+	n = find_cell_string(ws, row, 0, 'Value Date')
 	row = row + n
-	fields = read_expense_fields(ws, row)
-	expenses = retrieve_or_create(port_values, 'expense')
 
-	while (is_blank_line(ws, row, 9)):	# skip blank lines in between
+	fields = read_expense_fields(ws, row)
+	row = row + 1
+
+	while (is_blank_line(ws, row, 9)):	# skip blank lines
 		row = row + 1
 
+	expenses = retrieve_or_create(port_values, 'expense')
 	while (row < ws.nrows):
 		try:
 			read_expense_item(ws, row, fields, expenses)
@@ -54,10 +69,39 @@ def read_expense(ws, port_values):
 
 		# end of while loop
 
-	while (is_blank_line(ws, row, 9)):	# skip blank lines in between
+	while (is_blank_line(ws, row, 9)):	# skip blank lines
 		row = row + 1
 
 	expense_sub_total = read_expense_sub_total(ws, row)
+	row = row + 1	# move to next line
+	validate_expense_sub_total(expenses, expense_sub_total)
+
+	while (is_blank_line(ws, row, 9)):	# skip blank lines
+		row = row + 1
+
+	# continue to read the next section of expense items (
+	# the performance fee)
+	while (row < ws.nrows):
+		try:
+			read_expense_item(ws, row, fields, expenses)
+		except InvalidExpenseItem:
+			# this line is not a expense item, skip it
+			pass
+
+		row = row + 1
+		if is_blank_line(ws, row, 9):	# end of the expense section
+			break
+
+		# end of while loop
+
+	while (is_blank_line(ws, row, 9)):	# skip blank lines
+		row = row + 1
+
+	# now read the sub total after performance fee is included
+	expense_sub_total = read_expense_sub_total(ws, row)
+	validate_expense_sub_total(expenses, expense_sub_total)
+
+	validate_expense_date(expenses, expense_date)
 
 
 
@@ -165,5 +209,36 @@ def read_expense_sub_total(ws, row):
 		return sub_total
 	else:
 		logger.error('read_expense_sub_total(): subtotal is not a float, value = {0}'.
-						format(subtotal))
+						format(sub_total))
 		raise ValueError('invalid subtotal type')
+
+
+
+def validate_expense_sub_total(expenses, expense_sub_total):
+	"""
+	Retrieve expense items from the expenses list, sum them up and
+	compare to the expense_sub_total.
+	"""
+	hkd_expenses = [exp_item['hkd_equivalent'] for exp_item in expenses]
+	if abs(sum(hkd_expenses) - expense_sub_total) < 0.000001:
+		pass	# alright, do nothing
+
+	else:
+		logger.error('validate_expense_sub_total(): sum of expenses {0} does not match the sub total {1}'.
+						format(sum(hkd_expenses), expense_sub_total))
+		raise ExpenseTotalNotMatch()
+
+
+
+def validate_expense_date(expenses, expense_date):
+	"""
+	See if the expense date is the same as the date of all expense
+	items.
+	"""
+	for exp_item in expenses:
+		if (exp_item['value_date'] == expense_date):
+			pass
+		else:
+			logger.error('expense date does not match: expense item: {0}, date {1}, expense date {2}'.
+							format(exp_item['description'], exp_item['value_date'], expense_date))
+			raise InconsistentExpenseDate()
