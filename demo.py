@@ -123,6 +123,9 @@ def calculate_equity_total(equity_holding, fx_table):
 		if amount == 0:
 			continue
 
+		if not 'listed_location' in equity:	# it's preferred shares
+			amount = amount /100
+
 		total = total + fx * amount * equity['price']
 
 	return total
