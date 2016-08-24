@@ -85,8 +85,8 @@ def calculate_holding_total(port_values):
 	equity_holding = port_values['equity']
 	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
 
-	# return bond_subtotal + equity_subtotal
-	return bond_subtotal
+	return bond_subtotal + equity_subtotal
+	# return bond_subtotal
 
 
 

@@ -66,6 +66,10 @@ def read_portfolio_summary(ws, port_values):
 	d = read_date(ws, row, 1)
 	port_values['date'] = d
 
+	# read the summary of cash and holdings
+	n = read_cash_holding_summary(ws, row)
+	row = row + n
+
 	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
 	row = row + n 	# move to that row
 	cell_value = ws.cell_value(row, 2)	# read value at column C
@@ -201,3 +205,31 @@ def find_cell_string(ws, row, column, cell_string):
 	logger.error('find_cell_string(): cell string {0} not found'.
 					format(cell_string))
 	raise CellNotFound('cell string not found')
+
+
+
+def read_cash_holding_summary(ws, row):
+	"""
+	Find the subtotal of cash, bond holding and equity holding.
+	"""
+	rows_read = find_cell_string(ws, row, 0, 'Current Portfolio')
+	count = 0
+	while row+rows_read < ws.nrows and count < 4:
+		cell_value = ws.cell_value(row+rows_read, 0)
+		count = count + 1	# assume we find one item
+		
+		if isinstance(cell_value, str) and cell_value.startswith('Cash'):
+
+		elif isinstance(cell_value, str) and cell_value.startswith('Debt Securities'):
+		
+		elif isinstance(cell_value, str) and cell_value.startswith('Debt Amortization'):
+		
+		elif isinstance(cell_value, str) and cell_value.startswith('Equities'):
+
+		else:
+			count = count - 1	# item not found, reverse the add
+
+
+		rows_read = rows_read + 1
+
+	return rows_read
