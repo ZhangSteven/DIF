@@ -67,14 +67,14 @@ def read_portfolio_summary(ws, port_values):
 	port_values['date'] = d
 
 	# read the summary of cash and holdings
-	n = read_cash_holding_summary(ws, row)
+	n = read_cash_holding_total(ws, row, port_values)
 	row = row + n
 
 	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
 	row = row + n 	# move to that row
 	cell_value = ws.cell_value(row, 2)	# read value at column C
 	populate_value(port_values, 'number_of_units', cell_value, row, 2)
-	
+
 	# the first 'unit price' is before performance fee,
 	# so we do not use it
 	n = find_cell_string(ws, row, 0, 'Unit Price')
@@ -208,28 +208,38 @@ def find_cell_string(ws, row, column, cell_string):
 
 
 
-def read_cash_holding_summary(ws, row):
+def read_cash_holding_total(ws, row, port_values):
 	"""
-	Find the subtotal of cash, bond holding and equity holding.
+	Read the subtotal of cash, bond holding and equity holding.
 	"""
 	rows_read = find_cell_string(ws, row, 0, 'Current Portfolio')
 	count = 0
 	while row+rows_read < ws.nrows and count < 4:
 		cell_value = ws.cell_value(row+rows_read, 0)
+		if not isinstance(cell_value, str):
+			continue
+
 		count = count + 1	# assume we find one item
+		target_value = ws.cell_value(row+rows_read, 7)	# column H
 		
-		if isinstance(cell_value, str) and cell_value.startswith('Cash'):
-
-		elif isinstance(cell_value, str) and cell_value.startswith('Debt Securities'):
-		
-		elif isinstance(cell_value, str) and cell_value.startswith('Debt Amortization'):
-		
-		elif isinstance(cell_value, str) and cell_value.startswith('Equities'):
-
+		if cell_value.startswith('Cash') and isinstance(target_value, float):
+			port_values['cash_total'] = target_value
+		elif cell_value.startswith('Debt Securities') and isinstance(target_value, float):
+			debt_value = target_value
+		elif cell_value.startswith('Debt Amortization') and isinstance(target_value, float):
+			debt_amortization = target_value
+		elif cell_value.startswith('Equities') and isinstance(target_value, float):
+			port_values['equity_total'] = target_value
 		else:
-			count = count - 1	# item not found, reverse the add
+			count = count - 1	# item not found, reverse the count
 
 
 		rows_read = rows_read + 1
+		# end of while loop
 
+	if count < 4:	# not all 4 sub totals found before end of file
+		logger.error('read_cash_holding_total(): some subtotal is missing')
+		raise CellNotFound
+
+	port_values['bond_total'] = debt_value + debt_amortization
 	return rows_read

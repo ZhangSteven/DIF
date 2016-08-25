@@ -9,12 +9,13 @@ import unittest2
 import datetime
 from xlrd import open_workbook
 from DIF.utility import get_current_path
-from DIF.open_summary import read_portfolio_summary, read_date, find_cell_string
+from DIF.open_summary import read_portfolio_summary, read_date, \
+                                find_cell_string, read_cash_holding_total
 
-class TestCash(unittest2.TestCase):
+class TestSummary(unittest2.TestCase):
 
     def __init__(self, *args, **kwargs):
-        super(TestCash, self).__init__(*args, **kwargs)
+        super(TestSummary, self).__init__(*args, **kwargs)
 
     def setUp(self):
         """
@@ -69,10 +70,23 @@ class TestCash(unittest2.TestCase):
         read_portfolio_summary(ws, self.port_values)
 
         p = self.port_values
+        self.assertEqual(len(p), 7)
         self.assertAlmostEqual(p['unit_price'], 10.6789)
         self.assertAlmostEqual(p['nav'], 459813450.8976)
         self.assertAlmostEqual(p['number_of_units'], 42663321.3938)
         self.assertEqual(p['date'], datetime.datetime(2015,12,10))
+        self.validate_cash_holding_total(p)
+
+
+    def test_read_cash_holding_total(self):
+        filename = get_current_path() + '\\samples\\summary_sample.xls'
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Sum.')
+
+        port_values = {}
+        row = 31    # current portfolio starts at A32
+        n = read_cash_holding_total(ws, row, port_values)
+        self.validate_cash_holding_total(port_values)
 
 
 
@@ -160,3 +174,10 @@ class TestCash(unittest2.TestCase):
             # if error does not occur, then something must be wrong
             # because the nav is 0. (J53)
             self.assertEqual('something is worng', 1)
+
+
+
+    def validate_cash_holding_total(self, port_values):
+        self.assertAlmostEqual(port_values['cash_total'], 71313637.18)
+        self.assertAlmostEqual(port_values['bond_total'], 405073645.12)
+        self.assertAlmostEqual(port_values['equity_total'], 43129460.7)

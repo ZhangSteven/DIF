@@ -1,6 +1,8 @@
 # coding=utf-8
 # 
-# Show how to use the functions.
+# This file is used to parse the diversified income fund excel files from
+# trustee, read the necessary fields and save into a csv file for
+# reconciliation with Advent Geneva.
 #
 
 from xlrd import open_workbook
@@ -12,7 +14,7 @@ from DIF.utility import logger, config
 
 
 
-class InconsistentNAV(Exception):
+class InconsistentValue(Exception):
 	pass
 
 
@@ -41,28 +43,46 @@ def open_dif(file_name, port_values):
 		ws = wb.sheet_by_name('Expense Report')
 		read_expense(ws, port_values)
 
-		validate_nav(port_values)
+		# make sure the holding and cash are read correctly
+		validate_cash_and_holding(port_values)
 
+		
 	except:
 		logger.exception('open_dif()')
+		raise
 
 
 
-def validate_nav(port_values):
+def validate_cash_and_holding(port_values):
 	"""
-	Calculate NAV from cash, holdings and expenses, then compare to the
-	NAV value from the excel file.
+	Calculate subtotal of cash, bond holdings and equity holdings, then 
+	compare to the value from the excel file.
+
+	Based on experience, the difference between the subtotal value and the
+	calculated subtotal is below 0.01 but above 0.001. Maybe this is due to
+	the rounding of actual number before they are input to excel.
 	"""
 	cash_total = calculate_cash_total(port_values)
-	holding_total = calculate_holding_total(port_values)
-	expense_total = calculate_expense_total(port_values)
-	nav = holding_total + cash_total - expense_total
-	nav2 = port_values['nav']
+	if abs(cash_total - port_values['cash_total']) > 0.01:
+		logger.error('validate_cash_holding(): calculated cash total {0} is inconsistent with that from file {1}'.
+						format(cash_total, port_values['cash_total']))
+		raise InconsistentValue
 
-	if abs(nav - nav2) > 0.000001:	# inconsistent
-		logger.error('validate_nav(): calculated nav {0} is inconsistent with nav from file {1}'.
-						format(nav, nav2))
-		raise InconsistentNAV
+	fx_table = retrieve_fx(port_values)
+	
+	bond_holding = port_values['bond']
+	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
+	if abs(bond_subtotal - port_values['bond_total']) > 0.01:
+		logger.error('validate_cash_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
+						format(bond_subtotal, port_values['bond_total']))
+		raise InconsistentValue
+
+	equity_holding = port_values['equity']
+	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
+	if abs(equity_subtotal - port_values['equity_total']) > 0.01:
+		logger.error('validate_cash_holding(): calculated equity total {0} is inconsistent with that from file {1}'.
+						format(equity_subtotal, port_values['equity_total']))
+		raise InconsistentValue
 
 
 
@@ -76,17 +96,17 @@ def calculate_cash_total(port_values):
 
 
 
-def calculate_holding_total(port_values):
-	fx_table = retrieve_fx(port_values)
+# def calculate_holding_total(port_values):
+# 	fx_table = retrieve_fx(port_values)
 	
-	bond_holding = port_values['bond']
-	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
+# 	bond_holding = port_values['bond']
+# 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
 
-	equity_holding = port_values['equity']
-	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
+# 	equity_holding = port_values['equity']
+# 	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
 
-	return bond_subtotal + equity_subtotal
-	# return bond_subtotal
+# 	return bond_subtotal + equity_subtotal
+# 	# return bond_subtotal
 
 
 
@@ -129,11 +149,6 @@ def calculate_equity_total(equity_holding, fx_table):
 		total = total + fx * amount * equity['price']
 
 	return total
-
-
-
-def calculate_expense_total(port_values):
-	return 0
 
 
 
