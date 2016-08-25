@@ -179,6 +179,12 @@ def write_csv(port_values):
 	cash_file = get_current_path() + '\\cash.csv'
 	write_cash_csv(cash_file, port_values)
 
+	holding_file = get_current_path() + '\\bond_holding.csv'
+	write_bond_holding_csv(holding_file, port_values)
+
+	holding_file = get_current_path() + '\\equity_holding.csv'
+	write_equity_holding_csv(holding_file, port_values)
+
 
 
 def write_cash_csv(cash_file, port_values):
@@ -198,6 +204,71 @@ def write_cash_csv(cash_file, port_values):
 				item = cash_account[fld]
 				if fld == 'date':
 					item = convert_datetime_to_string(item)
+				row.append(item)
+
+			file_writer.writerow(row)
+
+
+
+def write_bond_holding_csv(holding_file, port_values):
+	with open(holding_file, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile)
+
+		fields = ['isin', 'name', 'currency', 'accounting_treatment', 
+				'par_amount', 'is_listed', 'listed_location', 
+                'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
+                'maturity_date', 'average_cost', 'amortized_cost', 
+                'price', 'book_cost', 'interest_bought', 'amortized_value', 
+                'market_value', 'accrued_interest', 'amortized_gain_loss', 
+                'market_gain_loss', 'fx_gain_loss']
+
+		file_writer.writerow(fields)
+		bond_holding = port_values['bond']
+		for bond in bond_holding:
+			if bond['par_amount'] == 0:
+				continue
+
+			row = []
+			for fld in fields:
+				try:	# HTM and Trading bonds have slightly different fields,
+						# e.g, HTM bonds have amortized_cost while Trading
+						# bonds have price
+					item = bond[fld]
+					if fld == 'coupon_start_date' or fld == 'maturity_date':
+						item = convert_datetime_to_string(item)
+				except KeyError:
+					item = ''
+
+				row.append(item)
+
+			file_writer.writerow(row)
+
+
+
+def write_equity_holding_csv(holding_file, port_values):
+	with open(holding_file, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile)
+
+		fields = ['ticker', 'isin', 'name', 'currency', 'accounting_treatment', 
+					'number_of_shares', 'currency', 'fx_on_trade_day', 
+					'last_trade_date', 'average_cost', 'price', 'book_cost', 
+                    'market_value', 'market_gain_loss', 'fx_gain_loss']
+
+		file_writer.writerow(fields)
+		equity_holding = port_values['equity']
+		for equity in equity_holding:
+			if equity['number_of_shares'] == 0:
+				continue
+
+			row = []
+			for fld in fields:
+				try:
+					item = equity[fld]
+					if fld == 'last_trade_date':
+						item = convert_datetime_to_string(item)
+				except KeyError:
+					item = ''
+
 				row.append(item)
 
 			file_writer.writerow(row)
