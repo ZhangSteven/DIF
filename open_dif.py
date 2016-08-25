@@ -106,20 +106,6 @@ def calculate_cash_total(port_values):
 
 
 
-# def calculate_holding_total(port_values):
-# 	fx_table = retrieve_fx(port_values)
-	
-# 	bond_holding = port_values['bond']
-# 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
-
-# 	equity_holding = port_values['equity']
-# 	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
-
-# 	return bond_subtotal + equity_subtotal
-# 	# return bond_subtotal
-
-
-
 def calculate_bond_total(bond_holding, fx_table):
 	"""
 	capital repayment needs to be taken into account.
@@ -287,3 +273,21 @@ def convert_datetime_to_string(dt, fmt='yyyy-mm-dd'):
 		logger.error('convert_datetime_to_string(): invalid format {0}'.
 						format(fmt))
 		raise InvalidDatetimeFormat
+
+
+
+# we can execute the open_dif() from command line with an input file name
+if __name__ == '__main__':
+	import sys
+	if len(sys.argv) < 2:
+		print('use python open_dif.py <input_file>')
+		sys.exit(1)
+
+	filename = get_current_path() + '\\' + sys.argv[1]
+	port_values = {}
+	try:
+		open_dif(filename, port_values)
+	except:
+		print('something is wrong, check log file.')
+	else:
+		print('OK')

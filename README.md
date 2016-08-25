@@ -28,10 +28,20 @@ see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose
 
 
 +++++++++
-To do:
+ver 0.1
 +++++++++
 
-1. Add test cases for error conditions in open_holding.py
+1. Can read cash, holdings (bond and equity), expenses from the trustee xls files.
+
+2. Provides validation for cash and holding data, in open_dif.py.
+
+3. Output cash, bond holding and equity holding to 3 csv files.
+
+Usage:
+
+	python open_dif.py <trustee_excel_file>
+
+Note the trustee excel file must be put into the same directory as the open_dif.py
 
 
 
