@@ -63,7 +63,8 @@ def read_portfolio_summary(ws, port_values):
 	logger.debug('in read_portfolio_summary()')
 
 	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
-	d = read_date(ws, row, 1)
+	# d = read_date(ws, row, 1)
+	d = read_date(ws, row, 3)
 	port_values['date'] = d
 
 	# read the summary of cash and holdings
@@ -243,3 +244,11 @@ def read_cash_holding_total(ws, row, port_values):
 
 	port_values['bond_total'] = debt_value + debt_amortization
 	return rows_read
+
+
+
+def get_portfolio_date(port_values):
+	"""
+	Read the date of the summary.
+	"""
+	return port_values['date']

@@ -12,8 +12,9 @@ from DIF.open_summary import read_date, find_cell_string
 from DIF.open_expense import read_expense_fields, read_expense_item, \
                             InvalidExpenseItem, ExpenseTotalNotMatch, \
                             validate_expense_sub_total, read_expense_sub_total, \
-                            is_blank_line, read_expense, validate_expense_date, \
-                            InconsistentExpenseDate
+                            is_blank_line, read_expense
+
+                            
 
 class TestExpense(unittest2.TestCase):
 
@@ -181,23 +182,23 @@ class TestExpense(unittest2.TestCase):
         validate_expense_sub_total(expenses, expense_sub_total)
 
 
-    def test_validate_expense_date(self):
-        filename = get_current_path() + '\\samples\\expense_sample2.xls'
-        wb = open_workbook(filename=filename)
-        ws = wb.sheet_by_name('Expense Report')
+    # def test_validate_expense_date(self):
+    #     filename = get_current_path() + '\\samples\\expense_error1.xls'
+    #     wb = open_workbook(filename=filename)
+    #     ws = wb.sheet_by_name('Expense Report')
 
-        port_values = {}
-        read_expense(ws, port_values)
-        expenses = port_values['expense']
+    #     port_values = {}
+    #     read_expense(ws, port_values)
+    #     expenses = port_values['expense']
 
-        d = datetime.datetime(2015,12,10)
-        validate_expense_date(expenses, d)
+    #     d = datetime.datetime(2015,12,10)
+    #     validate_expense_date(expenses, d)
 
-        # change the date in one of the expense items
-        exp_item = expenses[1]
-        exp_item['value_date'] = d + datetime.timedelta(days=1)
-        with self.assertRaises(InconsistentExpenseDate):
-            validate_expense_date(expenses, d)
+    #     # change the date in one of the expense items
+    #     exp_item = expenses[1]
+    #     exp_item['value_date'] = d + datetime.timedelta(days=1)
+    #     with self.assertRaises(InconsistentExpenseDate):
+    #         validate_expense_date(expenses, d)
 
 
 

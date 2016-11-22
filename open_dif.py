@@ -7,7 +7,7 @@
 
 from xlrd import open_workbook
 from DIF.open_cash import read_cash
-from DIF.open_summary import read_portfolio_summary
+from DIF.open_summary import read_portfolio_summary, get_portfolio_date
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
 from DIF.utility import logger, config, get_current_path
@@ -21,6 +21,20 @@ class InconsistentValue(Exception):
 
 
 class InvalidDatetimeFormat(Exception):
+	pass
+
+
+
+class InconsistentExpenseDate(Exception):
+	"""
+	To indicate the expense item date is not the same as the portfolio
+	value date.
+	"""
+	pass
+
+
+
+class InvalidTickerFormat(Exception):
 	pass
 
 
@@ -49,6 +63,8 @@ def open_dif(file_name, port_values):
 		ws = wb.sheet_by_name('Expense Report')
 		read_expense(ws, port_values)
 
+		validate_expense_date(port_values)
+
 		# make sure the holding and cash are read correctly
 		validate_cash_and_holding(port_values)
 
@@ -60,15 +76,32 @@ def open_dif(file_name, port_values):
 
 
 
+def validate_expense_date(port_values):
+	"""
+	See if the date of the expense items is the same as the portfolio
+	value date.
+	"""
+	port_date = get_portfolio_date(port_values)
+	expenses = port_values['expense']
+	for exp_item in expenses:
+		if (exp_item['value_date'] == port_date):
+			pass
+		else:
+			logger.error('expense date does not match: expense item: {0}, date {1}, portfolio date {2}'.
+							format(exp_item['description'], exp_item['value_date'], port_date))
+			raise InconsistentExpenseDate()
+
+
+
 def validate_cash_and_holding(port_values):
 	"""
 	Calculate subtotal of cash, bond holdings and equity holdings, then 
 	compare to the value from the excel file.
 
-	The difference used in testing (0.01 for cash, 0.05 for bond and 0.01
+	The difference used in testing (0.01 for cash, 0.1 for bond and 0.01
 	for equity) are based on experience. Because we find these numbers are
 	'just nice' to pass the test, if they are too big, then there is no point
-	to do verfication, if too small, then it will make some excels fail.
+	to do verfication, if too small, then it will make some trustee excels fail.
 	Maybe this is due to the rounding of actual number before they are input 
 	to excel.
 	"""
@@ -82,7 +115,7 @@ def validate_cash_and_holding(port_values):
 	
 	bond_holding = port_values['bond']
 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
-	if abs(bond_subtotal - port_values['bond_total']) > 0.05:
+	if abs(bond_subtotal - port_values['bond_total']) > 0.1:
 		logger.error('validate_cash_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
 						format(bond_subtotal, port_values['bond_total']))
 		raise InconsistentValue
@@ -183,13 +216,16 @@ def write_cash_csv(cash_file, port_values):
 					'account_num', 'currency', 'balance', 
 					'fx_rate', 'hkd_equivalent']
 
+		portfolio_date = get_portfolio_date(port_values)
+		portfolio_date = convert_datetime_to_string(portfolio_date)
+
 		file_writer.writerow(fields)
 		for cash_account in cash_accounts:
 			row = []
 			for fld in fields:
 				item = cash_account[fld]
 				if fld == 'date':
-					item = convert_datetime_to_string(item)
+					item = portfolio_date
 				row.append(item)
 
 			file_writer.writerow(row)
@@ -206,9 +242,14 @@ def write_bond_holding_csv(holding_file, port_values):
                 'maturity_date', 'average_cost', 'amortized_cost', 
                 'price', 'book_cost', 'interest_bought', 'amortized_value', 
                 'market_value', 'accrued_interest', 'amortized_gain_loss', 
-                'market_gain_loss', 'fx_gain_loss']
+                'market_gain_loss', 'fx_gain_loss', 'portfolio', 'date',
+                'custodian']
 
 		file_writer.writerow(fields)
+
+		portfolio_date = get_portfolio_date(port_values)
+		portfolio_date = convert_datetime_to_string(portfolio_date)
+
 		bond_holding = port_values['bond']
 		for bond in bond_holding:
 			if bond['par_amount'] == 0:
@@ -216,16 +257,24 @@ def write_bond_holding_csv(holding_file, port_values):
 
 			row = []
 			for fld in fields:
-				try:	# HTM and Trading bonds have slightly different fields,
-						# e.g, HTM bonds have amortized_cost while Trading
-						# bonds have price
-					item = bond[fld]
-					if fld == 'coupon_start_date' or fld == 'maturity_date':
-						item = convert_datetime_to_string(item)
-				except KeyError:
-					item = ''
+				if fld == 'portfolio':
+					item = '19437'
+				elif fld == 'date':
+					item = portfolio_date
+				elif fld == 'custodian':
+					item = 'BOCHK'
+				else:
+					try:	# HTM and Trading bonds have slightly different fields,
+							# e.g, HTM bonds have amortized_cost while Trading
+							# bonds have price
+						item = bond[fld]
+						if fld == 'coupon_start_date' or fld == 'maturity_date':
+							item = convert_datetime_to_string(item)
+					except KeyError:
+						item = ''
 
 				row.append(item)
+
 
 			file_writer.writerow(row)
 
@@ -238,9 +287,12 @@ def write_equity_holding_csv(holding_file, port_values):
 		fields = ['ticker', 'isin', 'name', 'currency', 'accounting_treatment', 
 					'number_of_shares', 'currency', 'fx_on_trade_day', 
 					'last_trade_date', 'average_cost', 'price', 'book_cost', 
-                    'market_value', 'market_gain_loss', 'fx_gain_loss']
+                    'market_value', 'market_gain_loss', 'fx_gain_loss', 
+                    'portfolio', 'date', 'custodian']
 
 		file_writer.writerow(fields)
+		portfolio_date = get_portfolio_date(port_values)
+		portfolio_date = convert_datetime_to_string(portfolio_date)
 		equity_holding = port_values['equity']
 		for equity in equity_holding:
 			if equity['number_of_shares'] == 0:
@@ -248,12 +300,21 @@ def write_equity_holding_csv(holding_file, port_values):
 
 			row = []
 			for fld in fields:
-				try:
-					item = equity[fld]
-					if fld == 'last_trade_date':
-						item = convert_datetime_to_string(item)
-				except KeyError:
-					item = ''
+				if fld == 'portfolio':
+					item = '19437'
+				elif fld == 'date':
+					item = portfolio_date
+				elif fld == 'custodian':
+					item = 'BOCHK'
+				else:
+					try:
+						item = equity[fld]
+						if fld == 'last_trade_date':
+							item = convert_datetime_to_string(item)
+						elif fld == 'ticker':
+							item = convert_to_BLP_ticker(item)
+					except KeyError:
+						item = ''
 
 				row.append(item)
 
@@ -273,6 +334,37 @@ def convert_datetime_to_string(dt, fmt='yyyy-mm-dd'):
 		logger.error('convert_datetime_to_string(): invalid format {0}'.
 						format(fmt))
 		raise InvalidDatetimeFormat
+
+
+
+def convert_to_BLP_ticker(ticker):
+	"""
+	Convert a ticker in trustee's format to Bloomberg ticker format. E.g.,
+
+	H0939: 939 HK
+	H1186: 1186 HK
+	N0011: 11 HK
+	N2388: 2388 HK
+
+	H probaly means "H shares", N probably means "normal shares", so the rule
+	is to remove the leading "H" or "N", then remove any leading zeros, then
+	append "HK" to finish the conversion.
+	"""
+	if len(ticker) == 5 and (ticker[0] == 'H' or ticker[0] == 'N'):
+		ticker = ticker[1:]
+		if ticker.isdigit():
+			i = 0
+			for char in ticker:
+				if char == '0':
+					i = i + 1
+				else:
+					break
+
+			if i < len(ticker):
+				return ticker[i:] + ' HK'
+
+	logger.error('convert_to_BLP_ticker(): invalid ticker format {0}'.format(ticker))
+	raise InvalidTickerFormat
 
 
 

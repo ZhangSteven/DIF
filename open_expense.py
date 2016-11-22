@@ -7,7 +7,7 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 from DIF.utility import logger, get_datemode, retrieve_or_create
 from DIF.open_holding import is_empty_cell
-from DIF.open_summary import read_date, find_cell_string
+from DIF.open_summary import read_date, find_cell_string, get_portfolio_date
 
 
 
@@ -29,8 +29,8 @@ class ExpenseTotalNotMatch(Exception):
 
 
 
-class InconsistentExpenseDate(Exception):
-	pass
+# class InconsistentExpenseDate(Exception):
+# 	pass
 
 
 
@@ -45,7 +45,7 @@ def read_expense(ws, port_values):
 		exchange_rate, hkd_equivalent
 	"""
 	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
-	expense_date = read_date(ws, row, 1)
+	# expense_date = read_date(ws, row, 1)
 	n = find_cell_string(ws, row, 0, 'Value Date')
 	row = row + n
 
@@ -100,8 +100,6 @@ def read_expense(ws, port_values):
 	# now read the sub total after performance fee is included
 	expense_sub_total = read_expense_sub_total(ws, row)
 	validate_expense_sub_total(expenses, expense_sub_total)
-
-	validate_expense_date(expenses, expense_date)
 
 
 
@@ -227,18 +225,3 @@ def validate_expense_sub_total(expenses, expense_sub_total):
 		logger.error('validate_expense_sub_total(): sum of expenses {0} does not match the sub total {1}'.
 						format(sum(hkd_expenses), expense_sub_total))
 		raise ExpenseTotalNotMatch()
-
-
-
-def validate_expense_date(expenses, expense_date):
-	"""
-	See if the expense date is the same as the date of all expense
-	items.
-	"""
-	for exp_item in expenses:
-		if (exp_item['value_date'] == expense_date):
-			pass
-		else:
-			logger.error('expense date does not match: expense item: {0}, date {1}, expense date {2}'.
-							format(exp_item['description'], exp_item['value_date'], expense_date))
-			raise InconsistentExpenseDate()

@@ -10,7 +10,7 @@ from DIF.open_cash import read_cash
 from DIF.open_summary import read_portfolio_summary
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
-from DIF.open_dif import validate_cash_and_holding, InconsistentValue
+from DIF.open_dif import open_dif, validate_cash_and_holding, InconsistentValue
 from DIF.utility import get_current_path
 
 
