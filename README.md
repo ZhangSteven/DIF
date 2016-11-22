@@ -28,6 +28,16 @@ see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose
 
 
 +++++++++
+ver 0.11
++++++++++
+
+1. Add 3 columns "date", "portfolio" and "custodian" to the equity and bond holding files.
+
+2. Convert the JP Morgan ticker "N0011", "H0939" to Bloomberg ticker format, 11 HK and 939 HK. The conversion assumes all stocks are HK stocks, ticker always start with "N" or "H".
+
+
+
++++++++++
 ver 0.1
 +++++++++
 
