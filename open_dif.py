@@ -285,7 +285,7 @@ def write_equity_holding_csv(holding_file, port_values):
 		file_writer = csv.writer(csvfile)
 
 		fields = ['ticker', 'isin', 'name', 'currency', 'accounting_treatment', 
-					'number_of_shares', 'currency', 'fx_on_trade_day', 
+					'number_of_shares', 'fx_on_trade_day', 
 					'last_trade_date', 'average_cost', 'price', 'book_cost', 
                     'market_value', 'market_gain_loss', 'fx_gain_loss', 
                     'portfolio', 'date', 'custodian']
