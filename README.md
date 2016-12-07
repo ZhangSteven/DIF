@@ -26,6 +26,24 @@ For more information, see:
 see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose2
 
 
++++++++++
+To do
++++++++++
+
+1. How about not reading the columns for each holding section, but read columns for each type of holdings once and re-use it later, e.g., HTM bond, trading bond, equity.
+
+2. For HKD equivalent, email the other party to change?
+
+3. Modify the error checking code, to include the sheet name it's reading?
+
+
+++++++++++
+ver 0.12
+++++++++++
+1. Use config_logging's logging function instead of its own file logging.
+2. Read input DIF file and output the csv files to the directory specified in the config file, instead of in the local directory.
+
+
 
 +++++++++
 ver 0.11

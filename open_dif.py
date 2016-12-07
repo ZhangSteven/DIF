@@ -10,8 +10,8 @@ from DIF.open_cash import read_cash
 from DIF.open_summary import read_portfolio_summary, get_portfolio_date
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
-from DIF.utility import logger, config, get_current_path
-import csv
+from DIF.utility import logger, get_input_directory
+import csv, os
 
 
 
@@ -195,13 +195,13 @@ def write_csv(port_values):
 	"""
 	Write cash and holdings into csv files.
 	"""	
-	cash_file = get_current_path() + '\\cash.csv'
+	cash_file = get_input_directory() + '\\cash.csv'
 	write_cash_csv(cash_file, port_values)
 
-	holding_file = get_current_path() + '\\bond_holding.csv'
+	holding_file = get_input_directory() + '\\bond_holding.csv'
 	write_bond_holding_csv(holding_file, port_values)
 
-	holding_file = get_current_path() + '\\equity_holding.csv'
+	holding_file = get_input_directory() + '\\equity_holding.csv'
 	write_equity_holding_csv(holding_file, port_values)
 
 
@@ -375,7 +375,11 @@ if __name__ == '__main__':
 		print('use python open_dif.py <input_file>')
 		sys.exit(1)
 
-	filename = get_current_path() + '\\' + sys.argv[1]
+	filename = get_input_directory() + '\\' + sys.argv[1]
+	if not os.path.exists(filename):
+		print('{0} does not exist'.format(filename))
+		sys.exit(1)
+
 	port_values = {}
 	try:
 		open_dif(filename, port_values)
