@@ -11,6 +11,7 @@ from DIF.open_summary import read_portfolio_summary, get_portfolio_date
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
 from DIF.utility import logger, get_input_directory
+from investment_lookup.id_lookup import get_investment_Ids
 import csv, os
 
 
@@ -18,12 +19,8 @@ import csv, os
 class InconsistentValue(Exception):
 	pass
 
-
-
 class InvalidDatetimeFormat(Exception):
 	pass
-
-
 
 class InconsistentExpenseDate(Exception):
 	"""
@@ -31,8 +28,6 @@ class InconsistentExpenseDate(Exception):
 	value date.
 	"""
 	pass
-
-
 
 class InvalidTickerFormat(Exception):
 	pass
@@ -44,35 +39,31 @@ def open_dif(file_name, port_values):
 	Open the excel file of the DIF fund. Read its cash positions, holdings,
 	expenses, calculate its nav and verify it with the nav from the excel.
 	"""
-	try:
-		wb = open_workbook(filename=file_name)
+	wb = open_workbook(filename=file_name)
 
-		ws = wb.sheet_by_name('Portfolio Sum.')
-		read_portfolio_summary(ws, port_values)
-		
-		# find sheets that contain cash
-		sheet_names = wb.sheet_names()
-		for sn in sheet_names:
-			if len(sn) > 4 and sn[-4:] == '-BOC':
-			    ws = wb.sheet_by_name(sn)
-			    read_cash(ws, port_values)
-		
-		ws = wb.sheet_by_name('Portfolio Val.')
-		read_holding(ws, port_values)
-		
-		ws = wb.sheet_by_name('Expense Report')
-		read_expense(ws, port_values)
+	ws = wb.sheet_by_name('Portfolio Sum.')
+	read_portfolio_summary(ws, port_values)
+	
+	# find sheets that contain cash
+	sheet_names = wb.sheet_names()
+	for sn in sheet_names:
+		if len(sn) > 4 and sn[-4:] == '-BOC':
+		    ws = wb.sheet_by_name(sn)
+		    read_cash(ws, port_values)
+	
+	ws = wb.sheet_by_name('Portfolio Val.')
+	read_holding(ws, port_values)
+	
+	ws = wb.sheet_by_name('Expense Report')
+	read_expense(ws, port_values)
 
-		validate_expense_date(port_values)
+	validate_expense_date(port_values)
 
-		# make sure the holding and cash are read correctly
-		validate_cash_and_holding(port_values)
+	# make sure the holding and cash are read correctly
+	validate_cash_and_holding(port_values)
 
-		# output the cash, holdings into a csv file.
-		write_csv(port_values)
-	except:
-		logger.exception('open_dif()')
-		raise
+	# output the cash, holdings into a csv file.
+	write_csv(port_values)
 
 
 
@@ -212,16 +203,15 @@ def write_cash_csv(cash_file, port_values):
 
 		cash_accounts = port_values['cash_accounts']
 
-		fields = ['bank', 'date', 'account_type', 
-					'account_num', 'currency', 'balance', 
+		fields = ['account_type', 'account_num', 'currency', 'balance', 
 					'fx_rate', 'hkd_equivalent']
 
 		portfolio_date = get_portfolio_date(port_values)
 		portfolio_date = convert_datetime_to_string(portfolio_date)
 
-		file_writer.writerow(fields)
+		file_writer.writerow(['portfolio', 'custodian', 'date'] + fields)
 		for cash_account in cash_accounts:
-			row = []
+			row = ['19437', 'BOCHK', portfolio_date]
 			for fld in fields:
 				item = cash_account[fld]
 				if fld == 'date':
@@ -236,16 +226,16 @@ def write_bond_holding_csv(holding_file, port_values):
 	with open(holding_file, 'w', newline='') as csvfile:
 		file_writer = csv.writer(csvfile)
 
-		fields = ['isin', 'name', 'currency', 'accounting_treatment', 
+		fields = ['name', 'currency', 'accounting_treatment', 
 				'par_amount', 'is_listed', 'listed_location', 
                 'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
                 'maturity_date', 'average_cost', 'amortized_cost', 
                 'price', 'book_cost', 'interest_bought', 'amortized_value', 
                 'market_value', 'accrued_interest', 'amortized_gain_loss', 
-                'market_gain_loss', 'fx_gain_loss', 'portfolio', 'date',
-                'custodian']
+                'market_gain_loss', 'fx_gain_loss']
 
-		file_writer.writerow(fields)
+		file_writer.writerow(['portfolio', 'date', 'custodian', 'geneva_investment_id', 
+								'isin', 'bloomberg_figi'] + fields)
 
 		portfolio_date = get_portfolio_date(port_values)
 		portfolio_date = convert_datetime_to_string(portfolio_date)
@@ -255,23 +245,21 @@ def write_bond_holding_csv(holding_file, port_values):
 			if bond['par_amount'] == 0:
 				continue
 
-			row = []
+			row = ['19437', portfolio_date, 'BOCHK']
+			investment_ids = get_investment_Ids('19437', 'ISIN', bond['isin'], 
+												bond['accounting_treatment'])
+			for id in investment_ids:
+				row.append(id)
+
 			for fld in fields:
-				if fld == 'portfolio':
-					item = '19437'
-				elif fld == 'date':
-					item = portfolio_date
-				elif fld == 'custodian':
-					item = 'BOCHK'
-				else:
-					try:	# HTM and Trading bonds have slightly different fields,
-							# e.g, HTM bonds have amortized_cost while Trading
-							# bonds have price
-						item = bond[fld]
-						if fld == 'coupon_start_date' or fld == 'maturity_date':
-							item = convert_datetime_to_string(item)
-					except KeyError:
-						item = ''
+				try:	# HTM and Trading bonds have slightly different fields,
+						# e.g, HTM bonds have amortized_cost while Trading
+						# bonds have price
+					item = bond[fld]
+					if fld == 'coupon_start_date' or fld == 'maturity_date':
+						item = convert_datetime_to_string(item)
+				except KeyError:
+					item = ''
 
 				row.append(item)
 
@@ -287,10 +275,9 @@ def write_equity_holding_csv(holding_file, port_values):
 		fields = ['ticker', 'isin', 'name', 'currency', 'accounting_treatment', 
 					'number_of_shares', 'fx_on_trade_day', 
 					'last_trade_date', 'average_cost', 'price', 'book_cost', 
-                    'market_value', 'market_gain_loss', 'fx_gain_loss', 
-                    'portfolio', 'date', 'custodian']
+                    'market_value', 'market_gain_loss', 'fx_gain_loss']
 
-		file_writer.writerow(fields)
+		file_writer.writerow(['portfolio', 'date', 'custodian'] + fields)
 		portfolio_date = get_portfolio_date(port_values)
 		portfolio_date = convert_datetime_to_string(portfolio_date)
 		equity_holding = port_values['equity']
@@ -298,23 +285,16 @@ def write_equity_holding_csv(holding_file, port_values):
 			if equity['number_of_shares'] == 0:
 				continue
 
-			row = []
+			row = ['19437', portfolio_date, 'BOCHK']
 			for fld in fields:
-				if fld == 'portfolio':
-					item = '19437'
-				elif fld == 'date':
-					item = portfolio_date
-				elif fld == 'custodian':
-					item = 'BOCHK'
-				else:
-					try:
-						item = equity[fld]
-						if fld == 'last_trade_date':
-							item = convert_datetime_to_string(item)
-						elif fld == 'ticker':
-							item = convert_to_BLP_ticker(item)
-					except KeyError:
-						item = ''
+				try:
+					item = equity[fld]
+					if fld == 'last_trade_date':
+						item = convert_datetime_to_string(item)
+					elif fld == 'ticker':
+						item = convert_to_BLP_ticker(item)
+				except KeyError:
+					item = ''
 
 				row.append(item)
 
@@ -350,7 +330,7 @@ def convert_to_BLP_ticker(ticker):
 	is to remove the leading "H" or "N", then remove any leading zeros, then
 	append "HK" to finish the conversion.
 	"""
-	if len(ticker) == 5 and (ticker[0] == 'H' or ticker[0] == 'N'):
+	if len(ticker) == 5 and ticker[0] in ['H', 'N']:
 		ticker = ticker[1:]
 		if ticker.isdigit():
 			i = 0
@@ -384,6 +364,7 @@ if __name__ == '__main__':
 	try:
 		open_dif(filename, port_values)
 	except:
-		print('something is wrong, check log file.')
+		logger.exception('open_dif():')
+		print('something goes wrong, check log file.')
 	else:
 		print('OK')

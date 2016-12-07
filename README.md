@@ -38,6 +38,17 @@ To do
 
 
 ++++++++++
+ver 0.13
+++++++++++
+This version works with Geneva custom loaders (cash, position).
+
+1. Change the output csv for bond positions, to handle both HTM and Trading positions.
+2. Use investment_lookup.id_lookup's get_investment_ids() function to get the appriate investment IDs for HTM and Trading positions.
+3. Modify equity and cash output csv to work with the custom data loaders of Geneva.
+
+
+
+++++++++++
 ver 0.12
 ++++++++++
 1. Use config_logging's logging function instead of its own file logging.
