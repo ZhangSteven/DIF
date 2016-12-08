@@ -39,6 +39,16 @@ To do
 4. Modify the error checking code, to include the sheet name it's reading?
 
 
+
+++++++++++
+ver 0.14
+++++++++++
+1. Now we output htm positions and afs positions into two files, instead of bond holding and equity holding. This way, we can recon the price/market value of the afs positions, as trustee also uses Bloomberg price, we can use this to check whether geneva has downloaded the prices properly.
+
+waiting to be tested
+
+
+
 ++++++++++
 ver 0.13
 ++++++++++

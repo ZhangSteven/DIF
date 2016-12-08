@@ -182,22 +182,39 @@ def retrieve_fx(port_values):
 
 
 
+def create_csv_file_name(date_string, file_suffix):
+	"""
+	Create the output csv file name based on the date string, as well as
+	the file suffix: cash, afs_positions, or htm_positions
+	"""
+	csv_file = get_input_directory() + '\\DIF_' + date_string \
+				+ '_' + file_suffix + '.csv'
+	return csv_file
+
+
+
 def write_csv(port_values):
 	"""
 	Write cash and holdings into csv files.
 	"""	
-	cash_file = get_input_directory() + '\\cash.csv'
-	write_cash_csv(cash_file, port_values)
+	write_cash_csv(port_values)
 
-	holding_file = get_input_directory() + '\\bond_holding.csv'
-	write_bond_holding_csv(holding_file, port_values)
+	# holding_file = get_input_directory() + '\\bond_holding.csv'
+	# write_bond_holding_csv(holding_file, port_values)
 
-	holding_file = get_input_directory() + '\\equity_holding.csv'
-	write_equity_holding_csv(holding_file, port_values)
+	# holding_file = get_input_directory() + '\\equity_holding.csv'
+	# write_equity_holding_csv(holding_file, port_values)
+
+	write_htm_holding_csv(port_values)
+	write_afs_holding_csv(port_values)
 
 
 
-def write_cash_csv(cash_file, port_values):
+def write_cash_csv(port_values):
+	portfolio_date = get_portfolio_date(port_values)
+	portfolio_date = convert_datetime_to_string(portfolio_date)
+	cash_file = create_csv_file_name(portfolio_date, 'cash')
+
 	with open(cash_file, 'w', newline='') as csvfile:
 		file_writer = csv.writer(csvfile)
 
@@ -292,6 +309,117 @@ def write_equity_holding_csv(holding_file, port_values):
 					if fld == 'last_trade_date':
 						item = convert_datetime_to_string(item)
 					elif fld == 'ticker':
+						item = convert_to_BLP_ticker(item)
+				except KeyError:
+					item = ''
+
+				row.append(item)
+
+			file_writer.writerow(row)
+
+
+
+def write_htm_holding_csv(port_values):
+	"""
+	Output the HTM positions
+	"""
+	portfolio_date = get_portfolio_date(port_values)
+	portfolio_date = convert_datetime_to_string(portfolio_date)
+	holding_file = create_csv_file_name(portfolio_date, 'htm_positions')
+		
+	with open(holding_file, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile)
+		bond_holding = port_values['bond']
+
+		# pick all fields that HTM bond have
+		fields = ['name', 'currency', 'accounting_treatment', 'par_amount', 
+					'is_listed', 'listed_location', 'fx_on_trade_day', 
+					'coupon_rate', 'coupon_start_date', 'maturity_date', 
+					'average_cost', 'amortized_cost', 'book_cost', 
+					'interest_bought', 'amortized_value', 'accrued_interest', 
+					'amortized_gain_loss', 'fx_gain_loss']
+
+		file_writer.writerow(['portfolio', 'date', 'custodian', 'geneva_investment_id', 
+								'isin', 'bloomberg_figi'] + fields)
+		
+		for bond in bond_holding:
+			if bond['par_amount'] == 0 or bond['accounting_treatment'] != 'HTM':
+				continue
+
+			row = ['19437', portfolio_date, 'BOCHK']
+			investment_ids = get_investment_Ids('19437', 'ISIN', bond['isin'], 
+												bond['accounting_treatment'])
+			for id in investment_ids:
+				row.append(id)
+
+			for fld in fields:
+				try:	# HTM and Trading bonds have slightly different fields,
+						# e.g, HTM bonds have amortized_cost while Trading
+						# bonds have price
+					item = bond[fld]
+					if fld == 'coupon_start_date' or fld == 'maturity_date':
+						item = convert_datetime_to_string(item)
+				except KeyError:
+					item = ''
+
+				row.append(item)
+
+			file_writer.writerow(row)
+
+
+
+def write_afs_holding_csv(port_values):
+	"""
+	Output the AFS positions, including trading bond and equity.
+	"""
+	portfolio_date = get_portfolio_date(port_values)
+	portfolio_date = convert_datetime_to_string(portfolio_date)
+	holding_file = create_csv_file_name(portfolio_date, 'afs_positions')
+		
+	with open(holding_file, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile)
+		bond_holding = port_values['bond']
+		equity_holding = port_values['equity']
+
+		# pick fields that are common to equity and trading bond
+		fields = ['ticker', 'isin', 'bloomberg_figi', 'name', 'currency', 
+					'accounting_treatment', 'quantity', 'average_cost', 
+					'price', 'book_cost', 'market_value', 'market_gain_loss', 
+					'fx_gain_loss']
+			
+		file_writer.writerow(['portfolio', 'date', 'custodian'] + fields)
+		
+		for bond in bond_holding:
+			if bond['par_amount'] == 0 or bond['accounting_treatment'] != 'Trading':
+				continue
+
+			row = ['19437', portfolio_date, 'BOCHK']
+
+			for fld in fields:
+				if fld == 'quantity':
+					fld = 'par_amount'
+				try:	
+					item = bond[fld]
+				except KeyError:
+					item = ''
+
+				row.append(item)
+
+			file_writer.writerow(row)
+
+
+		for equity in equity_holding:
+			if equity['number_of_shares'] == 0 or equity['accounting_treatment'] != 'Trading':
+				continue
+
+			row = ['19437', portfolio_date, 'BOCHK']
+
+			for fld in fields:
+				if fld == 'quantity':
+					fld = 'number_of_shares'
+				try:	
+					item = equity[fld]
+					if fld == 'ticker':
 						item = convert_to_BLP_ticker(item)
 				except KeyError:
 					item = ''
