@@ -216,7 +216,7 @@ def write_cash_csv(port_values):
 	cash_file = create_csv_file_name(portfolio_date, 'cash')
 
 	with open(cash_file, 'w', newline='') as csvfile:
-		file_writer = csv.writer(csvfile)
+		file_writer = csv.writer(csvfile, delimiter='|')
 
 		cash_accounts = port_values['cash_accounts']
 
@@ -328,7 +328,7 @@ def write_htm_holding_csv(port_values):
 	holding_file = create_csv_file_name(portfolio_date, 'htm_positions')
 		
 	with open(holding_file, 'w', newline='') as csvfile:
-		file_writer = csv.writer(csvfile)
+		file_writer = csv.writer(csvfile, delimiter='|')
 		bond_holding = port_values['bond']
 
 		# pick all fields that HTM bond have
@@ -377,7 +377,7 @@ def write_afs_holding_csv(port_values):
 	holding_file = create_csv_file_name(portfolio_date, 'afs_positions')
 		
 	with open(holding_file, 'w', newline='') as csvfile:
-		file_writer = csv.writer(csvfile)
+		file_writer = csv.writer(csvfile, delimiter='|')
 		bond_holding = port_values['bond']
 		equity_holding = port_values['equity']
 

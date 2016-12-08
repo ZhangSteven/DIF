@@ -30,22 +30,24 @@ see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose
 To do
 +++++++++
 
-1. Separate the holdings output to 2 files: HTM and Trading (trading bond and equity), so the we can match the price/market value local of the latter.
+1. Some unused sections have certain fields missing, we can read the fields for 3 types of data: HTM bond, Trading bond, and Equity, then reuse the fields later to solve this problem.
 
-2. How about not reading the columns for each holding section, but read columns for each type of holdings once and re-use it later, e.g., HTM bond, trading bond, equity.
+2. Solve the problem when there is one or more blanks in between holdings in a section.
 
-3. For HKD equivalent, email the other party to change?
+3. Solve the problem of miss spelled 'HKD Equiv' to 'USD Equiv.'
 
-4. Modify the error checking code, to include the sheet name it's reading?
+4. Modify the error checking code, to include the sheet name it's reading.
 
 
 
 ++++++++++
 ver 0.14
 ++++++++++
+Tested OK with Geneva custom loaders (HTM position, AFS position, cash)
+
 1. Now we output htm positions and afs positions into two files, instead of bond holding and equity holding. This way, we can recon the price/market value of the afs positions, as trustee also uses Bloomberg price, we can use this to check whether geneva has downloaded the prices properly.
 
-waiting to be tested
+2. Change the delimiter to '|' instead of ',' for csv file, because when the security name contains a comma, although Python csvwrite wraps it with "" and Excel can read it properly, Geneva custom loader not able to parse it correctly.
 
 
 
