@@ -205,10 +205,11 @@ class TestHolding(unittest2.TestCase):
                     'accrued_interest', 'market_gain_loss', 'fx_gain_loss']
         asset_class = 'bond'
         currency = 'USD'
-        bond_holding = []
+        # bond_holding = []
+        port_values = {}
 
-        read_section(ws, row, fields, asset_class, currency, bond_holding)
-        self.validate_bond_trading(bond_holding)
+        read_section(ws, row, fields, asset_class, currency, port_values)
+        self.validate_bond_trading(port_values['bond'])
         
 
 
@@ -227,12 +228,13 @@ class TestHolding(unittest2.TestCase):
                     'market_gain_loss', 'fx_gain_loss']
         asset_class = 'equity'
         currency = 'HKD'
-        equity_holding = []
+        # equity_holding = []
+        port_values = {}
 
-        read_section(ws, row, fields, asset_class, currency, equity_holding)
-
-        self.validate_listed_equity(equity_holding)
+        read_section(ws, row, fields, asset_class, currency, port_values)
+        self.validate_listed_equity(port_values['equity'])
         
+
 
     def test_read_section_preferred_shares(self):
 
@@ -249,11 +251,11 @@ class TestHolding(unittest2.TestCase):
                     'market_gain_loss', 'fx_gain_loss']
         asset_class = 'equity'
         currency = 'USD'
-        equity_holding = []
+        # equity_holding = []
+        port_values = {}
 
-        read_section(ws, row, fields, asset_class, currency, equity_holding)
-
-        self.validate_preferred_shares(equity_holding)
+        read_section(ws, row, fields, asset_class, currency, port_values)
+        self.validate_preferred_shares(port_values['equity'])
 
 
 

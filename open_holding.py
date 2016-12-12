@@ -12,6 +12,14 @@ from DIF.utility import logger, get_datemode, retrieve_or_create
 
 
 
+class BadFieldName(Exception):
+	pass
+
+class BadAssetClass(Exception):
+	pass
+
+
+
 def read_holding(ws, port_values):
 	"""
 	Read the worksheet with portfolio holdings. To retrieve holding, 
@@ -75,23 +83,22 @@ def read_holding(ws, port_values):
 				if str.strip(tokens[1]).startswith('Debt Securities'):	# bond
 					logger.debug('bond: {0}'.format(cell_value))
 
-					bond_holding = retrieve_or_create(port_values, 'bond')
 					currency = read_currency(cell_value)
 					fields, n = read_bond_fields(ws, row)	# read the bond
 					row = row + n							# field names
 
-					n = read_section(ws, row, fields, 'bond', currency, bond_holding)
+					n = read_section(ws, row, fields, 'bond', currency, port_values)
 					row = row + n
 
 				elif str.strip(tokens[1]).startswith('Equities'):		# equity
 					logger.debug('equity: {0}'.format(cell_value))
 
-					equity_holding = retrieve_or_create(port_values, 'equity')
+					# equity_holding = retrieve_or_create(port_values, 'equity')
 					currency = read_currency(cell_value)
 					fields, n = read_equity_fields(ws, row)
 					row = row + n
 
-					n = read_section(ws, row, fields, 'equity', currency, equity_holding)
+					n = read_section(ws, row, fields, 'equity', currency, port_values)
 					row = row + n
 		
 		# move to next row
@@ -140,7 +147,7 @@ def read_field_name(ws, row, column):
 
 
 
-def read_bond_fields(ws, row):
+def read_fields(ws, name_map, row):
 	"""
 	Read the field names for this bond section, it may be fields for held
 	to maturity bond, or for trading bonds.
@@ -153,142 +160,137 @@ def read_bond_fields(ws, row):
 		# search the first column
 		cell_value = ws.cell_value(row+rows_read, 0)
 
-		"""
-		We need the following bond fields
-
-		isin, name, accounting_treatment, par_amount, currency, is_listed, 
-		listed_location, fx_on_trade_day, coupon_rate, coupon_start_date, 
-		maturity_date, average_cost, amortized_cost, price, book_cost,
-		interest_bought, amortized_value, market_value, accrued_interest,
-		amortized_gain_loss, market_gain_loss, fx_gain_loss
-		"""
-
 		if cell_value == 'Description':
 			for i in range(2, 17):
 				field_tuple = read_field_name(ws, row+rows_read, i)
-
-				if field_tuple[1] == 'Par Amt':
-					fields.append('par_amount')
-				elif field_tuple[1] == 'Listed (Y/N)':
-					fields.append('is_listed')
-				elif field_tuple == ('Primary', 'Exchange'):
-					fields.append('listed_location')
-				elif field_tuple == ('(AVG) FX', 'for TXN'):
-					fields.append('fx_on_trade_day')
-				elif field_tuple == ('Int.', 'Rate (%)'):
-					fields.append('coupon_rate')
-				elif field_tuple == ('Int.', 'Start Day'):
-					fields.append('coupon_start_date')
-				elif field_tuple[1] == 'Maturity':
-					fields.append('maturity_date')
-				elif field_tuple == ('Cost', '(%)'):
-					fields.append('average_cost')
-				elif field_tuple == ('Price', '(%)'):
-					fields.append('price')
-				elif field_tuple == ('(Amortized)', '(%)'):
-					fields.append('amortized_cost')
-				elif field_tuple[1] == 'Book Cost':
-					fields.append('book_cost')
-				elif field_tuple == ('Int.', 'Bought'):
-					fields.append('interest_bought')
-				elif field_tuple == ('市價', 'M. Value'):
-					fields.append('market_value')
-				elif field_tuple == ('Adjusted Value', '(Amortized)'):
-					fields.append('amortized_value')
-				elif field_tuple[1] == 'Accr. Int.':
-					fields.append('accrued_interest')
-				elif field_tuple == ('Year-End', 'Amortization'):
-					fields.append('amortized_gain_loss')
-				elif field_tuple == ('Gain/(Loss)', 'M. Value'):
-					fields.append('market_gain_loss')
-				elif field_tuple == ('FX', 'HKD Equiv.'):
-					fields.append('fx_gain_loss')
-				else:
-					# if the field name does not match any of the above, it
-					# means the format of the excel may have changed, new
-					# fields added, etc. Please change the code to handle it.
-					logger.error('read_equity_fields(): field name not handled, at row {0}, column {1}, value = {2} {3}'.
+				try:
+					fields.append(name_map[field_tuple])
+				except:
+					logger.exception('read_fields(): ')
+					logger.error('read_fields(): bad field name at row {0}, column {1}, value = {2} {3}'.
 									format(row+rows_read, i, ws.cell_value(row+rows_read-1, i),
 											ws.cell_value(row+rows_read, i)))
-					raise ValueError('bad field name')
+					raise BadFieldName()
 
 			break	# finished reading the fields
 
 		# move to next row
 		rows_read = rows_read + 1
+	# end of while loop
 
-	return (fields, rows_read)
+	return fields, rows_read
+
+
+
+def read_bond_fields(ws, row):
+	"""
+	Read the field names for this bond section, it may be fields for held
+	to maturity bond, or for trading bonds.
+	"""
+	# rows_read = 1
+	# fields = []
+
+	name_map = {
+		('', ''):'empty_field',
+
+		# Bond fields section
+		('票面值', 'Par Amt'):'par_amount',
+		('上市 (是/否)', 'Listed (Y/N)'):'is_listed',
+		('Primary', 'Exchange'):'listed_location',
+		('(AVG) FX', 'for TXN'):'fx_on_trade_day',
+		('Int.', 'Rate (%)'):'coupon_rate',
+		('Int.', 'Start Day'):'coupon_start_date',
+		('到期日', 'Maturity'):'maturity_date',
+		('Cost', '(%)'):'average_cost',
+		('Price', '(%)'):'price',
+		('(Amortized)', '(%)'):'amortized_cost',
+		('成本價', 'Book Cost'):'book_cost',
+		('Int.', 'Bought'):'interest_bought',
+		('市價', 'M. Value'):'market_value',
+		('Adjusted Value', '(Amortized)'):'amortized_value',
+		('應收利息', 'Accr. Int.'):'accrued_interest',
+		('Year-End', 'Amortization'):'amortized_gain_loss',
+		('Gain/(Loss)', 'M. Value'):'market_gain_loss',
+		('FX', 'HKD Equiv.'):'fx_gain_loss'
+	}
+
+	return read_fields(ws, name_map, row)
 
 
 
 def read_equity_fields(ws, row):
 	"""
-	Read the field names for the equity section.
-
-	number_of_shares, currency, listed_location, fx_on_trade_day, 
-	last_trade_date, average_cost, price, book_cost, market_value, 
-	market_gain_loss, fx_gain_loss
-
 	Note the equity section contains listed equity and preferred shares. 
 	For listed equity we'll see listed_location, but for preferred shares, 
 	this field is missing.	
 	"""
-	rows_read = 1
-	fields = []
 
-	while (row+rows_read < ws.nrows):
-			
-		# search the first column
-		cell_value = ws.cell_value(row+rows_read, 0)
+	name_map = {
+		('', ''):'empty_field',
 
-		if cell_value == 'Description':
-			for i in range(2, 17):
-				field_tuple = read_field_name(ws, row+rows_read, i)
+		('股數', 'Share'):'number_of_shares',
+		('幣值', 'CCY'):'currency',
+		('Location', 'of Listed'):'listed_location',
+		('(AVG) FX', 'for TXN'):'fx_on_trade_day',
+		('最後交易日', 'Latest V.D.'):'last_trade_date',
+		('Avg.', 'Price'):'average_cost',
+		('Market', 'Price'):'price',
+		('成本價', 'Book Cost'):'book_cost',
+		('市價', 'M. Value'):'market_value',
+		('Gain/(Loss)', 'M. Value'):'market_gain_loss',
+		('FX', 'HKD Equiv.'):'fx_gain_loss'
+	}
 
-				if field_tuple == ('', ''):	# empty fields
-					fields.append('empty_field')
-				elif field_tuple[1] == 'Share':
-					fields.append('number_of_shares')
-				elif field_tuple[1] == 'CCY':
-					fields.append('currency')
-				elif field_tuple == ('Location', 'of Listed'):
-					fields.append('listed_location')
-				elif field_tuple == ('(AVG) FX', 'for TXN'):
-					fields.append('fx_on_trade_day')
-				elif field_tuple[1] == 'Latest V.D.':
-					fields.append('last_trade_date')
-				elif field_tuple == ('Avg.', 'Price'):
-					fields.append('average_cost')
-				elif field_tuple == ('Market', 'Price'):
-					fields.append('price')
-				elif field_tuple[1] == 'Book Cost':
-					fields.append('book_cost')
-				elif field_tuple == ('市價', 'M. Value'):
-					fields.append('market_value')
-				elif field_tuple == ('Gain/(Loss)', 'M. Value'):
-					fields.append('market_gain_loss')
-				elif field_tuple == ('FX', 'HKD Equiv.'):
-					fields.append('fx_gain_loss')
-				else:
-					# if the field name does not match any of the above, it
-					# means the format of the excel may have changed, new
-					# fields added, etc. Please change the code to handle it.
-					logger.error('read_equity_fields(): field name not handled, at row {0}, column {1}, value = {2} {3}'.
-									format(row+rows_read, i, \
-											ws.cell_value(row+rows_read-1, i),
-											ws.cell_value(row+rows_read, i)))
-					raise ValueError('bad field name')
-
-			break	# finished reading the fields
-
-		# move to next row
-		rows_read = rows_read + 1
-
-	return (fields, rows_read)
+	return read_fields(ws, name_map, row)
 
 
 
-def read_section(ws, row, fields, asset_class, currency, holding):
+def adjust_fields(port_values, fields, asset_class, accounting_treatment):
+	"""
+	Sometimes there are missing fields in a section, say SGD bond HTM
+	section tends to have empty columns for its data fields. To overcome
+	this problem, we reuse the fields for the same type of holding from
+	previous sections.
+	"""
+	# don't touch equity fields, because the fields for real equity and for
+	# those preferred shares treated as equity are different.
+	if asset_class == 'equity':
+		return fields
+
+	if not (asset_class, accounting_treatment) in port_values:
+		port_values[(asset_class, accounting_treatment)] = fields
+		return fields
+	else:
+		existing_fields = port_values[(asset_class, accounting_treatment)]
+		if len(fields) != len(existing_fields):
+			logger.warning('adjust_fields(): existing fields do not match with the fields passed in, reuse existing fields.')
+			show_fields(existing_fields, fields)
+
+		else:
+			for i in range(len(fields)):
+				if fields[i] != existing_fields[i]:
+					logger.warning('adjust_fields(): existing fields do not match with the fields passed in, reuse existing fields.')
+					show_fields(existing_fields, fields)
+
+		return existing_fields
+
+
+
+def show_fields(existing_fields, fields):
+	for i in range(max(len(existing_fields), len(fields))):
+		logger.info('{0} : {1}, {2}'.format(i, get_value(existing_fields, i), get_value(fields, i)))
+
+
+
+def get_value(fields, index):
+	try:
+		return fields[index]
+	except IndexError:
+		return '<out of range>'
+
+
+
+def read_section(ws, row, fields, asset_class, currency, port_values):
 	"""
 	Read a section in the worksheet (ws), starting on row number (row).
 	fields being the list of fields to read from column C. For example,
@@ -321,7 +323,14 @@ def read_section(ws, row, fields, asset_class, currency, holding):
 
 	Return the number of rows read in this function
 	"""
+
+	# currently only handle these two types of asset class
+	if not asset_class in ['equity', 'bond']:
+		logger.error('read_section(): invalid asset class: {0}'.format(asset_class))
+		raise BadAssetClass()
+
 	rows_read = 1
+	holding = retrieve_or_create(port_values, asset_class)
 
 	while (row+rows_read < ws.nrows):
 		cell_value = ws.cell_value(row+rows_read, 0)
@@ -349,6 +358,7 @@ def read_section(ws, row, fields, asset_class, currency, holding):
 									format(row+rows_read, cell_value))
 					raise ValueError('bad accounting treatment')
 
+				fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
 				n = read_sub_section(ws, row+rows_read, accounting_treatment, 
 										fields, asset_class, currency, holding)
 				rows_read = rows_read + n
@@ -369,12 +379,6 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 	Return the number of rows read in this function
 	"""
-
-	# currently only handle these two types of asset class
-	if not asset_class in ['equity', 'bond']:
-		logger.error('read_sub_section(): invalid asset class: {0}'.format(asset_class))
-		raise ValueError('bad asset class')
-
 	rows_read = 1
 
 	while (row+rows_read < ws.nrows):

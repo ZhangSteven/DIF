@@ -30,13 +30,22 @@ see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose
 To do
 +++++++++
 
-1. Some unused sections have certain fields missing, we can read the fields for 3 types of data: HTM bond, Trading bond, and Equity, then reuse the fields later to solve this problem.
+1. Solve the problem when there is one or more blank lines in between positions in a holdings section.
 
-2. Solve the problem when there is one or more blanks in between holdings in a section.
+2. Solve the problem of miss spelled 'HKD Equiv' to 'USD Equiv.'
 
-3. Solve the problem of miss spelled 'HKD Equiv' to 'USD Equiv.'
+3. Modify the error checking code, to include the sheet name being read.
 
-4. Modify the error checking code, to include the sheet name it's reading.
+
+
+++++++++++
+ver 0.15
+++++++++++
+Tested with Geneva custom loaders (HTM position, AFS position, cash).
+
+1. For the first HTM bond and Trading bond section, we save the data field names (usually they are good). For subsequent HTM bond/trading bond sections, we read the data field names and compare with the saved one, if they are different, leave a warning message in the log and reuse the saved one. For equity field names we don't do this because the equity section for real equity and for preferred shares treated as equity are different.
+
+2. Change the read_bond_fields() and read_equity_fields() functions to make them easier to understand, change the if...elifs to a dictionary.
 
 
 

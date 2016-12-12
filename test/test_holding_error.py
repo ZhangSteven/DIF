@@ -9,7 +9,8 @@ from xlrd import open_workbook
 from DIF.utility import get_current_path
 from DIF.open_holding import read_holding, read_bond_fields, read_currency, \
                             get_datemode, read_equity_fields, \
-                            read_sub_section, read_section
+                            read_sub_section, read_section, BadFieldName, \
+                            BadAssetClass
 
 class TestHoldingError(unittest2.TestCase):
 
@@ -203,7 +204,7 @@ class TestHoldingError(unittest2.TestCase):
         row = 275    # the equity section starts at A276
 
         # the field name is not handled
-        with self.assertRaisesRegexp(ValueError, 'bad field name'):
+        with self.assertRaises(BadFieldName):
             read_equity_fields(ws, row)
 
 
@@ -231,7 +232,7 @@ class TestHoldingError(unittest2.TestCase):
         ws = wb.sheet_by_name('Portfolio Val.')
         row = 62    # the bond section starts at A63
 
-        with self.assertRaisesRegexp(ValueError, 'bad field name'):
+        with self.assertRaises(BadFieldName):
             read_bond_fields(ws, row)
 
 
@@ -252,10 +253,11 @@ class TestHoldingError(unittest2.TestCase):
                     'accrued_interest', 'amortized_gain_loss', 'fx_gain_loss']
         asset_class = 'bond'
         currency = 'USD'
-        bond_holding = []
+        # bond_holding = []
+        port_values = {}
 
         with self.assertRaisesRegexp(ValueError, 'bad accounting treatment'):
-            read_section(ws, row, fields, asset_class, currency, bond_holding)
+            read_section(ws, row, fields, asset_class, currency, port_values)
 
 
 
@@ -277,7 +279,8 @@ class TestHoldingError(unittest2.TestCase):
         asset_class = 'Bond'	# it should be 'bond', this creates an error
         
         currency = 'USD'
-        bond_holding = []
+        # bond_holding = []
+        port_values = {}
 
-        with self.assertRaisesRegexp(ValueError, 'bad asset class'):
-            read_section(ws, row, fields, asset_class, currency, bond_holding)
+        with self.assertRaises(BadAssetClass):
+            read_section(ws, row, fields, asset_class, currency, port_values)
