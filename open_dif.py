@@ -89,7 +89,7 @@ def validate_cash_and_holding(port_values):
 	Calculate subtotal of cash, bond holdings and equity holdings, then 
 	compare to the value from the excel file.
 
-	The difference used in testing (0.01 for cash, 0.1 for bond and 0.01
+	The difference used in testing (0.01 for cash, 0.2 for bond and 0.01
 	for equity) are based on experience. Because we find these numbers are
 	'just nice' to pass the test, if they are too big, then there is no point
 	to do verfication, if too small, then it will make some trustee excels fail.
@@ -98,7 +98,7 @@ def validate_cash_and_holding(port_values):
 	"""
 	cash_total = calculate_cash_total(port_values)
 	if abs(cash_total - port_values['cash_total']) > 0.01:
-		logger.error('validate_cash_holding(): calculated cash total {0} is inconsistent with that from file {1}'.
+		logger.error('validate_cash_and_holding(): calculated cash total {0} is inconsistent with that from file {1}'.
 						format(cash_total, port_values['cash_total']))
 		raise InconsistentValue
 
@@ -106,15 +106,15 @@ def validate_cash_and_holding(port_values):
 	
 	bond_holding = port_values['bond']
 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
-	if abs(bond_subtotal - port_values['bond_total']) > 0.1:
-		logger.error('validate_cash_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
+	if abs(bond_subtotal - port_values['bond_total']) > 0.2:
+		logger.error('validate_cash_and_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
 						format(bond_subtotal, port_values['bond_total']))
 		raise InconsistentValue
 
 	equity_holding = port_values['equity']
 	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
 	if abs(equity_subtotal - port_values['equity_total']) > 0.01:
-		logger.error('validate_cash_holding(): calculated equity total {0} is inconsistent with that from file {1}'.
+		logger.error('validate_cash_and_holding(): calculated equity total {0} is inconsistent with that from file {1}'.
 						format(equity_subtotal, port_values['equity_total']))
 		raise InconsistentValue
 
@@ -198,13 +198,6 @@ def write_csv(port_values):
 	Write cash and holdings into csv files.
 	"""	
 	write_cash_csv(port_values)
-
-	# holding_file = get_input_directory() + '\\bond_holding.csv'
-	# write_bond_holding_csv(holding_file, port_values)
-
-	# holding_file = get_input_directory() + '\\equity_holding.csv'
-	# write_equity_holding_csv(holding_file, port_values)
-
 	write_htm_holding_csv(port_values)
 	write_afs_holding_csv(port_values)
 
@@ -237,88 +230,6 @@ def write_cash_csv(port_values):
 				row.append(item)
 
 			file_writer.writerow(row)
-
-
-
-# def write_bond_holding_csv(holding_file, port_values):
-# 	with open(holding_file, 'w', newline='') as csvfile:
-# 		file_writer = csv.writer(csvfile)
-
-# 		fields = ['name', 'currency', 'accounting_treatment', 
-# 				'par_amount', 'is_listed', 'listed_location', 
-#                 'fx_on_trade_day', 'coupon_rate', 'coupon_start_date', 
-#                 'maturity_date', 'average_cost', 'amortized_cost', 
-#                 'price', 'book_cost', 'interest_bought', 'amortized_value', 
-#                 'market_value', 'accrued_interest', 'amortized_gain_loss', 
-#                 'market_gain_loss', 'fx_gain_loss']
-
-# 		file_writer.writerow(['portfolio', 'date', 'custodian', 'geneva_investment_id', 
-# 								'isin', 'bloomberg_figi'] + fields)
-
-# 		portfolio_date = get_portfolio_date(port_values)
-# 		portfolio_date = convert_datetime_to_string(portfolio_date)
-
-# 		bond_holding = port_values['bond']
-# 		for bond in bond_holding:
-# 			if bond['par_amount'] == 0:
-# 				continue
-
-# 			row = ['19437', portfolio_date, 'BOCHK']
-# 			investment_ids = get_investment_Ids('19437', 'ISIN', bond['isin'], 
-# 												bond['accounting_treatment'])
-# 			for id in investment_ids:
-# 				row.append(id)
-
-# 			for fld in fields:
-# 				try:	# HTM and Trading bonds have slightly different fields,
-# 						# e.g, HTM bonds have amortized_cost while Trading
-# 						# bonds have price
-# 					item = bond[fld]
-# 					if fld == 'coupon_start_date' or fld == 'maturity_date':
-# 						item = convert_datetime_to_string(item)
-# 				except KeyError:
-# 					item = ''
-
-# 				row.append(item)
-
-
-# 			file_writer.writerow(row)
-
-
-
-# def write_equity_holding_csv(holding_file, port_values):
-# 	logger.debug('write_equity_holding_csv(): {0}'.foramt(holding_file))
-
-# 	with open(holding_file, 'w', newline='') as csvfile:
-# 		file_writer = csv.writer(csvfile)
-
-# 		fields = ['ticker', 'isin', 'name', 'currency', 'accounting_treatment', 
-# 					'number_of_shares', 'fx_on_trade_day', 
-# 					'last_trade_date', 'average_cost', 'price', 'book_cost', 
-#                     'market_value', 'market_gain_loss', 'fx_gain_loss']
-
-# 		file_writer.writerow(['portfolio', 'date', 'custodian'] + fields)
-# 		portfolio_date = get_portfolio_date(port_values)
-# 		portfolio_date = convert_datetime_to_string(portfolio_date)
-# 		equity_holding = port_values['equity']
-# 		for equity in equity_holding:
-# 			if equity['number_of_shares'] == 0:
-# 				continue
-
-# 			row = ['19437', portfolio_date, 'BOCHK']
-# 			for fld in fields:
-# 				try:
-# 					item = equity[fld]
-# 					if fld == 'last_trade_date':
-# 						item = convert_datetime_to_string(item)
-# 					elif fld == 'ticker':
-# 						item = convert_to_BLP_ticker(item)
-# 				except KeyError:
-# 					item = ''
-
-# 				row.append(item)
-
-# 			file_writer.writerow(row)
 
 
 

@@ -37,6 +37,16 @@ To do
 3. Modify the error checking code, to include the sheet name being read.
 
 
+++++++++++
+ver 0.16
+++++++++++
+1. Adjusted the tolerance value for bond total to 0.2 instead of 0.1. Because:
+
+	1.1 For trustee file "CL Franklin DIF 2016-12-15.xls", the difference is 0.115.
+
+	1.2 The are two decimal places for "bond value" and "bond amortization" in the NAV file, so rounding error should be at most 0.1+0.1 = 0.2, if trustee rounding is 0.119 to 0.11, just cut off the 3rd decimal point number.
+
+
 
 ++++++++++
 ver 0.15
