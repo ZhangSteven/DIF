@@ -37,6 +37,14 @@ To do
 3. Modify the error checking code, to include the sheet name being read.
 
 
+
+++++++++++
+ver 0.16
+++++++++++
+1. Bug fix: previous equity holding validation uses amount/100 to calculate the total market value, however for DIF holdings on 2016-12-16, they mix fund holding with preferred shares holding, so this does not work anymore. Now we add up market value directly.
+
+
+
 ++++++++++
 ver 0.16
 ++++++++++
