@@ -39,6 +39,13 @@ To do
 
 
 ++++++++++
+ver 0.17
+++++++++++
+1. Add an output_dir parameter to write_csv() function, so that it can work with the reconciliation_helper package. The output_dir parameter's default value is the input directory, so it stays backward compatible with ver 0.16, if working in standalone mode (python open_dif.py <input_file>), it still produces the same behaviour.
+
+
+
+++++++++++
 ver 0.16
 ++++++++++
 1. Bug fix: previous equity holding validation uses amount/100 to calculate the total market value, however for DIF holdings on 2016-12-16, they mix fund holding with preferred shares holding, so this does not work anymore. Now we add up market value directly.

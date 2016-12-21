@@ -184,31 +184,30 @@ def retrieve_fx(port_values):
 
 
 
-def create_csv_file_name(date_string, file_suffix):
+def create_csv_file_name(date_string, output_dir, file_suffix):
 	"""
 	Create the output csv file name based on the date string, as well as
 	the file suffix: cash, afs_positions, or htm_positions
 	"""
-	csv_file = get_input_directory() + '\\DIF_' + date_string \
-				+ '_' + file_suffix + '.csv'
+	csv_file = output_dir + '\\DIF_' + date_string + '_' + file_suffix + '.csv'
 	return csv_file
 
 
 
-def write_csv(port_values):
+def write_csv(port_values, output_dir=get_input_directory()):
 	"""
 	Write cash and holdings into csv files.
 	"""	
-	write_cash_csv(port_values)
-	write_htm_holding_csv(port_values)
-	write_afs_holding_csv(port_values)
+	write_cash_csv(port_values, output_dir)
+	write_htm_holding_csv(port_values, output_dir)
+	write_afs_holding_csv(port_values, output_dir)
 
 
 
-def write_cash_csv(port_values):
+def write_cash_csv(port_values, output_dir):
 	portfolio_date = get_portfolio_date(port_values)
 	portfolio_date = convert_datetime_to_string(portfolio_date)
-	cash_file = create_csv_file_name(portfolio_date, 'cash')
+	cash_file = create_csv_file_name(portfolio_date, output_dir, 'cash')
 	logger.debug('write_cash_csv(): {0}'.format(cash_file))
 
 	with open(cash_file, 'w', newline='') as csvfile:
@@ -235,13 +234,13 @@ def write_cash_csv(port_values):
 
 
 
-def write_htm_holding_csv(port_values):
+def write_htm_holding_csv(port_values, output_dir):
 	"""
 	Output the HTM positions
 	"""
 	portfolio_date = get_portfolio_date(port_values)
 	portfolio_date = convert_datetime_to_string(portfolio_date)
-	holding_file = create_csv_file_name(portfolio_date, 'htm_positions')
+	holding_file = create_csv_file_name(portfolio_date, output_dir, 'htm_positions')
 	logger.debug('write_htm_holding_csv(): {0}'.format(holding_file))
 		
 	with open(holding_file, 'w', newline='') as csvfile:
@@ -285,13 +284,13 @@ def write_htm_holding_csv(port_values):
 
 
 
-def write_afs_holding_csv(port_values):
+def write_afs_holding_csv(port_values, output_dir):
 	"""
 	Output the AFS positions, including trading bond and equity.
 	"""
 	portfolio_date = get_portfolio_date(port_values)
 	portfolio_date = convert_datetime_to_string(portfolio_date)
-	holding_file = create_csv_file_name(portfolio_date, 'afs_positions')
+	holding_file = create_csv_file_name(portfolio_date, output_dir, 'afs_positions')
 	logger.debug('write_afs_holding_csv(): {0}'.format(holding_file))
 
 	with open(holding_file, 'w', newline='') as csvfile:
