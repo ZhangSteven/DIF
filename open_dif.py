@@ -34,7 +34,7 @@ class InvalidTickerFormat(Exception):
 
 
 
-def open_dif(file_name, port_values):
+def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	"""
 	Open the excel file of the DIF fund. Read its cash positions, holdings,
 	expenses, calculate its nav and verify it with the nav from the excel.
@@ -63,7 +63,7 @@ def open_dif(file_name, port_values):
 	validate_cash_and_holding(port_values)
 
 	# output the cash, holdings into a csv file.
-	write_csv(port_values)
+	write_csv(port_values, output_dir)
 
 
 

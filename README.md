@@ -39,6 +39,13 @@ To do
 
 
 ++++++++++
+ver 0.18
+++++++++++
+1. Bug fix: Add output_dir to open_dif() function.
+
+
+
+++++++++++
 ver 0.17
 ++++++++++
 1. Add an output_dir parameter to write_csv() function, so that it can work with the reconciliation_helper package. The output_dir parameter's default value is the input directory, so it stays backward compatible with ver 0.16, if working in standalone mode (python open_dif.py <input_file>), it still produces the same behaviour.
