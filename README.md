@@ -39,6 +39,13 @@ To do
 
 
 ++++++++++
+ver 0.19
+++++++++++
+1. Changed write_csv() function to return the list of output csv files. This is required by the recon_helper package.
+
+
+
+++++++++++
 ver 0.18
 ++++++++++
 1. Bug fix: Add output_dir to open_dif() function.

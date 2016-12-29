@@ -62,8 +62,8 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	# make sure the holding and cash are read correctly
 	validate_cash_and_holding(port_values)
 
-	# output the cash, holdings into a csv file.
-	write_csv(port_values, output_dir)
+	# output the cash and holdings into csv files.
+	return write_csv(port_values, output_dir)
 
 
 
@@ -198,9 +198,10 @@ def write_csv(port_values, output_dir=get_input_directory()):
 	"""
 	Write cash and holdings into csv files.
 	"""	
-	write_cash_csv(port_values, output_dir)
-	write_htm_holding_csv(port_values, output_dir)
-	write_afs_holding_csv(port_values, output_dir)
+	cash_file = write_cash_csv(port_values, output_dir)
+	htm_file = write_htm_holding_csv(port_values, output_dir)
+	afs_file = write_afs_holding_csv(port_values, output_dir)
+	return [cash_file, htm_file, afs_file]
 
 
 
@@ -231,6 +232,8 @@ def write_cash_csv(port_values, output_dir):
 				row.append(item)
 
 			file_writer.writerow(row)
+
+	return cash_file
 
 
 
@@ -281,6 +284,8 @@ def write_htm_holding_csv(port_values, output_dir):
 				row.append(item)
 
 			file_writer.writerow(row)
+
+	return holding_file
 
 
 
@@ -344,6 +349,8 @@ def write_afs_holding_csv(port_values, output_dir):
 				row.append(item)
 
 			file_writer.writerow(row)
+
+	return holding_file
 
 
 
