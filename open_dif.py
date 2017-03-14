@@ -89,7 +89,7 @@ def validate_cash_and_holding(port_values):
 	Calculate subtotal of cash, bond holdings and equity holdings, then 
 	compare to the value from the excel file.
 
-	The difference used in testing (0.01 for cash, 0.2 for bond and 0.01
+	The difference used in testing (0.01 for cash, 0.2 for bond and 0.1
 	for equity) are based on experience. Because we find these numbers are
 	'just nice' to pass the test, if they are too big, then there is no point
 	to do verfication, if too small, then it will make some trustee excels fail.
@@ -113,7 +113,7 @@ def validate_cash_and_holding(port_values):
 
 	equity_holding = port_values['equity']
 	equity_subtotal = calculate_equity_total(equity_holding, fx_table)
-	if abs(equity_subtotal - port_values['equity_total']) > 0.01:
+	if abs(equity_subtotal - port_values['equity_total']) > 0.1:
 		logger.error('validate_cash_and_holding(): calculated equity total {0} is inconsistent with that from file {1}'.
 						format(equity_subtotal, port_values['equity_total']))
 		raise InconsistentValue

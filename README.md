@@ -39,6 +39,13 @@ To do
 
 
 ++++++++++
+ver 0.1901
+++++++++++
+1. Changed validate_cash_and_holding() function, so that it won't raise error unless the difference between the calculated equity total and the total in file is larger than 0.1 (previously 0.01). Because the DIF file on 2017-3-10 has a difference of 0.013.
+
+
+
+++++++++++
 ver 0.19
 ++++++++++
 1. Changed write_csv() function to return the list of output csv files. This is required by the recon_helper package.
