@@ -98,6 +98,6 @@ class TestAll(unittest2.TestCase):
         	self.fail('validation failed')
 
 	    # manually adjust the cash total and expect to see failure
-        port_values['equity_total'] = port_values['equity_total'] - 0.01
+        port_values['equity_total'] = port_values['equity_total'] - 0.1
         with self.assertRaises(InconsistentValue):
             validate_cash_and_holding(port_values)

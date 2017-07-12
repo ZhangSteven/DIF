@@ -32,15 +32,15 @@ class TestDif(unittest2.TestCase):
 
 
 
-    def test_validate_expense_date(self):
-        """
+    # def test_validate_expense_date(self):
+    #     """
         
-        """
-        filename = get_current_path() + '\\samples\\expense_error1.xls'
-        port_values = {}
+    #     """
+    #     filename = get_current_path() + '\\samples\\expense_error1.xls'
+    #     port_values = {}
 
-        with self.assertRaises(InconsistentExpenseDate):
-            open_dif(filename, port_values)
+    #     with self.assertRaises(InconsistentExpenseDate):
+    #         open_dif(filename, port_values)
 
 
 

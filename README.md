@@ -37,6 +37,13 @@ To do
 3. Modify the error checking code, to include the sheet name being read.
 
 
+++++++++++
+ver 0.2
+++++++++++
+1. Disabled validate_expense_date() function in open_dif.py, because the expense date may or may not match the portfolio date. In DIF 2017-7-10 file, there is a bank charge dated 2016-11-1. Therefore we disable the function.
+
+2. Test case updated to reflect that change.
+
 
 ++++++++++
 ver 0.1901

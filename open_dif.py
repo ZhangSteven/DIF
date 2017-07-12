@@ -57,7 +57,9 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	ws = wb.sheet_by_name('Expense Report')
 	read_expense(ws, port_values)
 
-	validate_expense_date(port_values)
+	# Expense date may or may not be the same as the portfolio date,
+	# so no need to validate.
+	# validate_expense_date(port_values)
 
 	# make sure the holding and cash are read correctly
 	validate_cash_and_holding(port_values)
@@ -67,20 +69,20 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 
 
 
-def validate_expense_date(port_values):
-	"""
-	See if the date of the expense items is the same as the portfolio
-	value date.
-	"""
-	port_date = get_portfolio_date(port_values)
-	expenses = port_values['expense']
-	for exp_item in expenses:
-		if (exp_item['value_date'] == port_date):
-			pass
-		else:
-			logger.error('expense date does not match: expense item: {0}, date {1}, portfolio date {2}'.
-							format(exp_item['description'], exp_item['value_date'], port_date))
-			raise InconsistentExpenseDate()
+# def validate_expense_date(port_values):
+# 	"""
+# 	See if the date of the expense items is the same as the portfolio
+# 	value date.
+# 	"""
+# 	port_date = get_portfolio_date(port_values)
+# 	expenses = port_values['expense']
+# 	for exp_item in expenses:
+# 		if (exp_item['value_date'] == port_date):
+# 			pass
+# 		else:
+# 			logger.error('expense date does not match: expense item: {0}, date {1}, portfolio date {2}'.
+# 							format(exp_item['description'], exp_item['value_date'], port_date))
+# 			raise InconsistentExpenseDate()
 
 
 
