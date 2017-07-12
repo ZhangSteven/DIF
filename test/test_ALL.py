@@ -41,31 +41,10 @@ class TestAll(unittest2.TestCase):
         """
         filename = get_current_path() + '\\samples\\sample_DIF_20151210.xls'
         port_values = {}
-        wb = open_workbook(filename=filename)
-		
-        ws = wb.sheet_by_name('Portfolio Sum.')
-        read_portfolio_summary(ws, port_values)
-
-		# find sheets that contain cash
-        sheet_names = wb.sheet_names()
-        for sn in sheet_names:
-            if len(sn) > 4 and sn[-4:] == '-BOC':
-                ws = wb.sheet_by_name(sn)
-                read_cash(ws, port_values)
-
-        ws = wb.sheet_by_name('Portfolio Val.')
-        read_holding(ws, port_values)
-
-        # make sure the holding and cash are read correctly
         try:
-	        validate_cash_and_holding(port_values)
+            open_dif(filename, port_values, get_current_path() + '\\samples')
         except:
-        	self.fail('validation failed')
-
-	    # manually adjust the cash total and expect to see failure
-        port_values['cash_total'] = port_values['cash_total'] - 0.01
-        with self.assertRaises(InconsistentValue):
-            validate_cash_and_holding(port_values)
+            self.fail('something goes wrong.')
 
 
 
@@ -76,28 +55,21 @@ class TestAll(unittest2.TestCase):
         """
         filename = get_current_path() + '\\samples\\sample_DIF_20151231.xls'
         port_values = {}
-        wb = open_workbook(filename=filename)
-		
-        ws = wb.sheet_by_name('Portfolio Sum.')
-        read_portfolio_summary(ws, port_values)
-
-		# find sheets that contain cash
-        sheet_names = wb.sheet_names()
-        for sn in sheet_names:
-            if len(sn) > 4 and sn[-4:] == '-BOC':
-                ws = wb.sheet_by_name(sn)
-                read_cash(ws, port_values)
-
-        ws = wb.sheet_by_name('Portfolio Val.')
-        read_holding(ws, port_values)
-
-        # make sure the holding and cash are read correctly
         try:
-	        validate_cash_and_holding(port_values)
+            open_dif(filename, port_values, get_current_path() + '\\samples')
         except:
-        	self.fail('validation failed')
+            self.fail('something goes wrong.')
 
-	    # manually adjust the cash total and expect to see failure
-        port_values['equity_total'] = port_values['equity_total'] - 0.1
-        with self.assertRaises(InconsistentValue):
-            validate_cash_and_holding(port_values)
+
+
+    def test_read_all3(self):
+        """
+        With the futures cash account.
+        """
+        filename = get_current_path() + '\\samples\\CL Franklin DIF 2017-07-10.xls'
+        port_values = {}
+        
+        try:
+            open_dif(filename, port_values, get_current_path() + '\\samples')
+        except:
+            self.fail('something goes wrong.')

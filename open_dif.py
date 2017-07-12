@@ -47,7 +47,7 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	# find sheets that contain cash
 	sheet_names = wb.sheet_names()
 	for sn in sheet_names:
-		if len(sn) > 4 and sn[-4:] == '-BOC':
+		if len(sn) > 4 and sn[-4:] == '-BOC' or sn == 'Broker-MS':
 		    ws = wb.sheet_by_name(sn)
 		    read_cash(ws, port_values)
 	

@@ -37,6 +37,14 @@ To do
 3. Modify the error checking code, to include the sheet name being read.
 
 
+
++++++++++++++++++++++
+ver 0.21 @ 2017-7-12
++++++++++++++++++++++
+1. Changed open_dif() in open_dif.py, so that it passes the "Broker-MS" sheet as a cash sheet to the open_cash() function. This is because that sheet contains the futures cash balance.
+
+
+
 ++++++++++
 ver 0.2
 ++++++++++
