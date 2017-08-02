@@ -7,7 +7,7 @@
 from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
-import datetime
+import datetime, re
 from DIF.utility import logger, get_datemode, retrieve_or_create
 
 
@@ -16,6 +16,9 @@ class BadFieldName(Exception):
 	pass
 
 class BadAssetClass(Exception):
+	pass
+
+class CurrencyNotFound(Exception):
 	pass
 
 
@@ -117,13 +120,26 @@ def read_currency(cell_value):
 
 	From the above strings, the function return USD, SGD, USD
 	"""
-	temp_list = cell_value.split('-')
-	token = temp_list[1]
-	temp_list = token.split('(')
-	currency = str.strip(temp_list[0])
+	# The old implementation
+	# temp_list = cell_value.split('-')
+	# token = temp_list[1]
+	# temp_list = token.split('(')
+	# currency = str.strip(temp_list[0])
 
-	if currency == 'US$':
-		currency = 'USD'	# make the correction
+	# if currency == 'US$':
+	# 	currency = 'USD'	# make the correction
+
+	# The new implementation uses regular expression
+	# it will match currency symbol US$, USD, HKD, SGD
+	pattern = '-\s*(US\$|USD|HK\$|HKD|SGD|CNY)\s*\(.*\)'
+	m = re.search(pattern, cell_value)
+	if m is None:	# pattern matching failed
+		logger.error('read_currency(): currency not found in string:{0}'.format(cell_value))
+		raise CurrencyNotFound()
+	else:
+		currency = m.group(1)
+		if currency == 'US$':
+			currency = 'USD'	# make the correction
 
 	return currency
 
@@ -159,7 +175,7 @@ def read_fields(ws, name_map, row):
 			
 		# search the first column
 		cell_value = ws.cell_value(row+rows_read, 0)
-
+		# print(cell_value)
 		if cell_value == 'Description':
 			for i in range(2, 17):
 				field_tuple = read_field_name(ws, row+rows_read, i)
@@ -211,7 +227,12 @@ def read_bond_fields(ws, row):
 		('應收利息', 'Accr. Int.'):'accrued_interest',
 		('Year-End', 'Amortization'):'amortized_gain_loss',
 		('Gain/(Loss)', 'M. Value'):'market_gain_loss',
-		('FX', 'HKD Equiv.'):'fx_gain_loss'
+		('FX', 'HKD Equiv.'):'fx_gain_loss',
+
+		# for trustee Macau fund
+		('', 'Listed (Y/N)'):'is_listed',
+		('Location', 'of Listed'):'listed_location',
+		('FX', 'MOP Equiv.'):'fx_gain_loss'
 	}
 
 	return read_fields(ws, name_map, row)
@@ -238,7 +259,11 @@ def read_equity_fields(ws, row):
 		('成本價', 'Book Cost'):'book_cost',
 		('市價', 'M. Value'):'market_value',
 		('Gain/(Loss)', 'M. Value'):'market_gain_loss',
-		('FX', 'HKD Equiv.'):'fx_gain_loss'
+		('FX', 'HKD Equiv.'):'fx_gain_loss',
+
+		# for trustee Macau fund
+		('上市 (是/否)', 'Listed (Y/N)'):'is_listed',
+		('FX', 'MOP Equiv.'):'fx_gain_loss'
 	}
 
 	return read_fields(ws, name_map, row)
@@ -334,37 +359,17 @@ def read_section(ws, row, fields, asset_class, currency, port_values):
 
 	while (row+rows_read < ws.nrows):
 		cell_value = ws.cell_value(row+rows_read, 0)
-		
-		# logger.debug(cell_value)
-		if isinstance(cell_value, str) and cell_value.startswith('('):
 
-			# detect the start of a subsection
-			# a subsection looks like "(i) Held to Maturity (xxx)"
-			i = cell_value.find(')', 1, len(cell_value)-1)
-			if i > 0:	# the string looks like '(xxx) yyy'
-				temp_str = str.strip(cell_value[i+1:])
-				
-				# logger.debug(temp_str)
-				if temp_str.startswith('Held to Maturity'):	# found HTM sub sec
-					accounting_treatment = 'HTM'
-				
-				elif temp_str.startswith('Trading'):
-					accounting_treatment = 'Trading'
+		if start_of_sub_section(cell_value):
+			accounting_treatment = get_accounting_treatment(cell_value)
+			fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
+			n = read_sub_section(ws, row+rows_read, accounting_treatment, 
+									fields, asset_class, currency, holding)
+			rows_read = rows_read + n
 
-				else:
-					# some other category other than HTM or Trading,
-					# Needs to implement
-					logger.error('read_section(): unhandled accounting treament at row {0} column 0, value = {1}'.
-									format(row+rows_read, cell_value))
-					raise ValueError('bad accounting treatment')
-
-				fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
-				n = read_sub_section(ws, row+rows_read, accounting_treatment, 
-										fields, asset_class, currency, holding)
-				rows_read = rows_read + n
-
-		elif isinstance(cell_value, str) and cell_value.startswith('Total'):
-			# the section ends
+		elif end_of_section(cell_value):
+		# elif isinstance(cell_value, str) and cell_value.startswith('Total'):
+		# 	# the section ends
 			break
 
 		rows_read = rows_read + 1	# move to next row
@@ -384,7 +389,58 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 	while (row+rows_read < ws.nrows):
 		cell_value = ws.cell_value(row+rows_read, 0)
 		
-		# logger.debug(cell_value)
+		logger.debug('read_sub_section(): reading row {0}'.format(row+rows_read))
+		# if is_security_position(cell_value):
+		# 	security_id = get_security_id(cell_value)
+		# 	security = {}
+		# 	if (asset_class == 'bond'):
+		# 		security['isin'] = security_id
+		# 	elif (asset_class == 'equity'):
+		# 		if ('listed_location') in fields:	# it's listed equity
+		# 			security['ticker'] = security_id
+		# 		else:								# it's preferred shares
+		# 			security['isin'] = security_id
+
+		# 	security['name'] = cell_value.strip()
+		# 	security['currency'] = currency
+		# 	security['accounting_treatment'] = accounting_treatment
+
+		# 	column = 2	# now start reading fields in column C
+		# 	for field in fields:
+		# 		cell_value = ws.cell_value(row+rows_read, column)
+		# 		if isinstance(cell_value, str):
+		# 			cell_value = cell_value.strip()
+		# 		# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
+
+		# 		if field == 'empty_field':	# ignore this field, move to
+		# 									# next column
+		# 			column = column + 1
+		# 			continue
+
+		# 		field_value = validate_and_convert_field_value(field, cell_value)
+
+		# 		# if already has currency assigned (in the case of listed 
+		# 		# equity), check whether the currency value is inconsistent
+		# 		if field == 'currency' and 'currency'in security \
+		# 			and field_value != security['currency']:
+							
+		# 			logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
+		# 							format(row+rows_read, column))
+		# 			raise ValueError('inconsistent currency value')
+
+		# 		security[field] = field_value
+
+		# 		# if holding amount is zero, stop reading other fields.
+		# 		if (field == 'par_amount' or field == 'number_of_shares') \
+		# 			and field_value == 0:
+		# 			break
+
+		# 		column = column + 1
+		# 		# end of for loop
+				
+		# 	holding.append(security)
+			# logger.debug(isin)
+
 		if isinstance(cell_value, str) and cell_value.startswith('('):
 
 			# detect the start of a security holding position
@@ -404,13 +460,15 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 					else:								# it's preferred shares
 						security['isin'] = token
 
-				security['name'] = cell_value
+				security['name'] = cell_value.strip()
 				security['currency'] = currency
 				security['accounting_treatment'] = accounting_treatment
 
 				column = 2	# now start reading fields in column C
 				for field in fields:
 					cell_value = ws.cell_value(row+rows_read, column)
+					if isinstance(cell_value, str):
+						cell_value = cell_value.strip()
 					# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
 
 					if field == 'empty_field':	# ignore this field, move to
@@ -440,9 +498,10 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 					# end of for loop
 					
 				holding.append(security)
-				# logger.debug(isin)
+				# # logger.debug(isin)
 
-		elif is_end_of_sub_section(ws, row+rows_read):
+		elif end_of_sub_section(ws, row+rows_read):
+		# elif start_of_sub_section(cell_value) or end_of_section(cell_value):
 			# the subsection ends
 			break
 
@@ -453,9 +512,59 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 
 
 
-def is_end_of_sub_section(ws, row):
+def get_accounting_treatment(cell_value):
 	"""
-	Tell whether this is the end of the sub section.
+	Get accounting treatment from the sub section, like
+
+	(i) Adj Price = Amortized Cost, or
+	(iv) Held to Maturity
+	"""
+	pattern = '^\([ivx]{1,5}\)\s*(.*)'
+	m = re.search(pattern, cell_value.strip())
+	if m is None:
+		logger.error('get_accounting_treatment(): failed to get accounting info from string: {0}'.
+									format(cell_value))
+		raise ValueError('invalid account treatment string')
+
+	else:
+		if m.group(1).startswith('Held to Maturity') or \
+				m.group(1).startswith('Adj Price = Amortized Cost'):
+			
+			return 'HTM'
+				
+		elif m.group(1).startswith('Trading') or \
+				m.group(1).startswith('Market Value = Market Value') or \
+				m.group(1).startswith('Available for Sales'):
+					
+			return 'Trading'
+
+		else:
+			logger.error('get_accounting_treatment(): unknown accounting treament: {0}'.
+									format(cell_value))
+			raise ValueError('bad accounting treatment')
+
+
+# def is_security_position(cell_value):
+
+def start_of_sub_section(cell_value):
+	"""
+	Tell whether this is the start of a sub section.
+	
+	It begins with (i) xxxx
+	"""
+	if isinstance(cell_value, str):
+		pattern = '^\([ivx]{1,5}\)'
+		m = re.search(pattern, cell_value.strip())
+		if m is not None:
+			return True
+
+	return False
+
+
+
+def end_of_sub_section(ws, row):
+	"""
+	Tell whether this is the end of a sub section.
 	
 	If the first 4 columns are all empty, then it is a blank line, then
 	it is the end of the sub section.
@@ -465,6 +574,17 @@ def is_end_of_sub_section(ws, row):
 			return False
 
 	return True
+
+
+
+def end_of_section(cell_value):
+	"""
+	Tell whether this is the end of the section.
+	"""
+	if isinstance(cell_value, str) and cell_value.startswith('Total'):
+		return True
+
+	return False
 
 
 
