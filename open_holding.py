@@ -21,6 +21,9 @@ class BadAssetClass(Exception):
 class CurrencyNotFound(Exception):
 	pass
 
+class SecurityIdNotFound(Exception):
+	pass
+
 
 
 def read_holding(ws, port_values):
@@ -390,114 +393,113 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 		cell_value = ws.cell_value(row+rows_read, 0)
 		
 		logger.debug('read_sub_section(): reading row {0}'.format(row+rows_read))
-		# if is_security_position(cell_value):
-		# 	security_id = get_security_id(cell_value)
-		# 	security = {}
-		# 	if (asset_class == 'bond'):
-		# 		security['isin'] = security_id
-		# 	elif (asset_class == 'equity'):
-		# 		if ('listed_location') in fields:	# it's listed equity
-		# 			security['ticker'] = security_id
-		# 		else:								# it's preferred shares
-		# 			security['isin'] = security_id
+		if is_security_position(cell_value):
+			security_id = get_security_id(cell_value)
+			security = {}
+			if (asset_class == 'bond'):
+				security['isin'] = security_id
+			elif (asset_class == 'equity'):
+				if ('listed_location') in fields:	# it's listed equity
+					security['ticker'] = security_id
+				else:								# it's preferred shares
+					security['isin'] = security_id
 
-		# 	security['name'] = cell_value.strip()
-		# 	security['currency'] = currency
-		# 	security['accounting_treatment'] = accounting_treatment
+			security['name'] = cell_value.strip()
+			security['currency'] = currency
+			security['accounting_treatment'] = accounting_treatment
 
-		# 	column = 2	# now start reading fields in column C
-		# 	for field in fields:
-		# 		cell_value = ws.cell_value(row+rows_read, column)
-		# 		if isinstance(cell_value, str):
-		# 			cell_value = cell_value.strip()
-		# 		# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
+			column = 2	# now start reading fields in column C
+			for field in fields:
+				cell_value = ws.cell_value(row+rows_read, column)
+				if isinstance(cell_value, str):
+					cell_value = cell_value.strip()
+				# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
 
-		# 		if field == 'empty_field':	# ignore this field, move to
-		# 									# next column
-		# 			column = column + 1
-		# 			continue
-
-		# 		field_value = validate_and_convert_field_value(field, cell_value)
-
-		# 		# if already has currency assigned (in the case of listed 
-		# 		# equity), check whether the currency value is inconsistent
-		# 		if field == 'currency' and 'currency'in security \
-		# 			and field_value != security['currency']:
-							
-		# 			logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
-		# 							format(row+rows_read, column))
-		# 			raise ValueError('inconsistent currency value')
-
-		# 		security[field] = field_value
-
-		# 		# if holding amount is zero, stop reading other fields.
-		# 		if (field == 'par_amount' or field == 'number_of_shares') \
-		# 			and field_value == 0:
-		# 			break
-
-		# 		column = column + 1
-		# 		# end of for loop
-				
-		# 	holding.append(security)
-			# logger.debug(isin)
-
-		if isinstance(cell_value, str) and cell_value.startswith('('):
-
-			# detect the start of a security holding position
-			# a holding position looks like "(xxx) security name"
-			i = cell_value.find(')', 1, len(cell_value)-1)
-			if i > 0:	# the string looks like '(xxx) yyy'
-				security = {}
-
-				# start populating fields of a security, then save it to the 
-				# security_holding list.
-				token = cell_value[1:i]
-				if (asset_class == 'bond'):
-					security['isin'] = token
-				elif (asset_class == 'equity'):
-					if ('listed_location') in fields:	# it's listed equity
-						security['ticker'] = token
-					else:								# it's preferred shares
-						security['isin'] = token
-
-				security['name'] = cell_value.strip()
-				security['currency'] = currency
-				security['accounting_treatment'] = accounting_treatment
-
-				column = 2	# now start reading fields in column C
-				for field in fields:
-					cell_value = ws.cell_value(row+rows_read, column)
-					if isinstance(cell_value, str):
-						cell_value = cell_value.strip()
-					# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
-
-					if field == 'empty_field':	# ignore this field, move to
-												# next column
-						column = column + 1
-						continue
-
-					field_value = validate_and_convert_field_value(field, cell_value)
-
-					# if already has currency assigned (in the case of listed 
-					# equity), check whether the currency value is inconsistent
-					if field == 'currency' and 'currency'in security \
-						and field_value != security['currency']:
-								
-						logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
-										format(row+rows_read, column))
-						raise ValueError('inconsistent currency value')
-
-					security[field] = field_value
-
-					# if holding amount is zero, stop reading other fields.
-					if (field == 'par_amount' or field == 'number_of_shares') \
-						and field_value == 0:
-						break
-
+				if field == 'empty_field':	# ignore this field, move to
+											# next column
 					column = column + 1
-					# end of for loop
+					continue
+
+				field_value = validate_and_convert_field_value(field, cell_value)
+
+				# if already has currency assigned (in the case of listed 
+				# equity), check whether the currency value is inconsistent
+				if field == 'currency' and 'currency'in security \
+					and field_value != security['currency']:
+							
+					logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
+									format(row+rows_read, column))
+					raise ValueError('inconsistent currency value')
+
+				security[field] = field_value
+
+				# if holding amount is zero, stop reading other fields.
+				if (field == 'par_amount' or field == 'number_of_shares') \
+					and field_value == 0:
+					break
+
+				column = column + 1
+				# end of for loop
+				
+			holding.append(security)
+
+		# if isinstance(cell_value, str) and cell_value.startswith('('):
+
+		# 	# detect the start of a security holding position
+		# 	# a holding position looks like "(xxx) security name"
+		# 	i = cell_value.find(')', 1, len(cell_value)-1)
+		# 	if i > 0:	# the string looks like '(xxx) yyy'
+		# 		security = {}
+
+		# 		# start populating fields of a security, then save it to the 
+		# 		# security_holding list.
+		# 		token = cell_value[1:i]
+		# 		if (asset_class == 'bond'):
+		# 			security['isin'] = token
+		# 		elif (asset_class == 'equity'):
+		# 			if ('listed_location') in fields:	# it's listed equity
+		# 				security['ticker'] = token
+		# 			else:								# it's preferred shares
+		# 				security['isin'] = token
+
+		# 		security['name'] = cell_value.strip()
+		# 		security['currency'] = currency
+		# 		security['accounting_treatment'] = accounting_treatment
+
+		# 		column = 2	# now start reading fields in column C
+		# 		for field in fields:
+		# 			cell_value = ws.cell_value(row+rows_read, column)
+		# 			if isinstance(cell_value, str):
+		# 				cell_value = cell_value.strip()
+		# 			# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
+
+		# 			if field == 'empty_field':	# ignore this field, move to
+		# 										# next column
+		# 				column = column + 1
+		# 				continue
+
+		# 			field_value = validate_and_convert_field_value(field, cell_value)
+
+		# 			# if already has currency assigned (in the case of listed 
+		# 			# equity), check whether the currency value is inconsistent
+		# 			if field == 'currency' and 'currency'in security \
+		# 				and field_value != security['currency']:
+								
+		# 				logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
+		# 								format(row+rows_read, column))
+		# 				raise ValueError('inconsistent currency value')
+
+		# 			security[field] = field_value
+
+		# 			# if holding amount is zero, stop reading other fields.
+		# 			if (field == 'par_amount' or field == 'number_of_shares') \
+		# 				and field_value == 0:
+		# 				break
+
+		# 			column = column + 1
+		# 			# end of for loop
 					
-				holding.append(security)
+		# 		holding.append(security)
 				# # logger.debug(isin)
 
 		elif end_of_sub_section(ws, row+rows_read):
@@ -544,7 +546,34 @@ def get_accounting_treatment(cell_value):
 			raise ValueError('bad accounting treatment')
 
 
-# def is_security_position(cell_value):
+
+def get_security_id(cell_value):
+	"""
+	Get the security id from its name, like
+	(XS1389124774) DEMETER (SWISS RE LTD) 6.05%, or
+	(N1530) 3SBio Inc. 
+	"""
+	pattern = '^\(([A-Z0-9]{5,12})\)'
+	m = re.search(pattern, cell_value.strip())
+	if m is None:
+		logger.error('get_security_id(): unable to extract security id from: {0}'.format(cell_value))
+		raise SecurityIdNotFound()
+	else:
+		return m.group(1)
+
+
+
+def is_security_position(cell_value):
+	if isinstance(cell_value, str):
+		pattern = '^\([A-Z0-9]{5,12}\)'	# looks like (DSFXFC07003) xxx 
+										# or (H0522) xxxx
+		m = re.search(pattern, cell_value.strip())
+		if m is not None:
+			return True
+
+	return False
+
+
 
 def start_of_sub_section(cell_value):
 	"""
