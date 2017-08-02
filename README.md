@@ -39,6 +39,13 @@ To do
 
 
 +++++++++++++++++++++
+ver 0.22 @ 2017-8-2
++++++++++++++++++++++
+1. Added support for 
+
+
+
++++++++++++++++++++++
 ver 0.21 @ 2017-7-12
 +++++++++++++++++++++
 1. Changed open_dif() in open_dif.py, so that it passes the "Broker-MS" sheet as a cash sheet to the open_cash() function. This is because that sheet contains the futures cash balance.

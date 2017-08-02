@@ -351,7 +351,8 @@ def read_section(ws, row, fields, asset_class, currency, port_values):
 
 	Return the number of rows read in this function
 	"""
-
+	logger.debug('read_section() at row {0}, asset class {1}'.format(row, asset_class))
+	
 	# currently only handle these two types of asset class
 	if not asset_class in ['equity', 'bond']:
 		logger.error('read_section(): invalid asset class: {0}'.format(asset_class))
@@ -360,22 +361,34 @@ def read_section(ws, row, fields, asset_class, currency, port_values):
 	rows_read = 1
 	holding = retrieve_or_create(port_values, asset_class)
 
+	# while (row+rows_read < ws.nrows):
+	# 	cell_value = ws.cell_value(row+rows_read, 0)
+	# 	if start_of_sub_section(cell_value):
+	# 		accounting_treatment = get_accounting_treatment(cell_value)
+	# 		fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
+	# 		n = read_sub_section(ws, row+rows_read, accounting_treatment, 
+	# 								fields, asset_class, currency, holding)
+	# 		rows_read = rows_read + n
+
+	# 	# elif end_of_section(cell_value):
+	# 	if end_of_section(ws.cell_value(row+rows_read, 0)):
+	# 		break
+
+	# 	rows_read = rows_read + 1	# move to next row
+
 	while (row+rows_read < ws.nrows):
-		cell_value = ws.cell_value(row+rows_read, 0)
-
-		if start_of_sub_section(cell_value):
-			accounting_treatment = get_accounting_treatment(cell_value)
-			fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
-			n = read_sub_section(ws, row+rows_read, accounting_treatment, 
-									fields, asset_class, currency, holding)
-			rows_read = rows_read + n
-
-		elif end_of_section(cell_value):
-		# elif isinstance(cell_value, str) and cell_value.startswith('Total'):
-		# 	# the section ends
+		if start_of_sub_section(ws.cell_value(row+rows_read, 0)):
 			break
-
 		rows_read = rows_read + 1	# move to next row
+
+	# when the sub section reading ends, we are either at the start of the next
+	# sub section or end of the section.
+	while start_of_sub_section(ws.cell_value(row+rows_read, 0)):
+		accounting_treatment = get_accounting_treatment(ws.cell_value(row+rows_read, 0))
+		fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
+		n = read_sub_section(ws, row+rows_read, accounting_treatment, 
+								fields, asset_class, currency, holding)
+		rows_read = rows_read + n
 
 	return rows_read
 
@@ -434,77 +447,17 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 				security[field] = field_value
 
 				# if holding amount is zero, stop reading other fields.
-				if (field == 'par_amount' or field == 'number_of_shares') \
-					and field_value == 0:
+				if field in ['par_amount', 'number_of_shares'] and field_value == 0:
 					break
 
 				column = column + 1
-				# end of for loop
-				
+			# end of for loop to create security
+
+			logger.debug('read_sub_section(): add security {0},{1},{2}'.
+							format(security['currency'], security['accounting_treatment'], security['name']))
 			holding.append(security)
 
-		# if isinstance(cell_value, str) and cell_value.startswith('('):
-
-		# 	# detect the start of a security holding position
-		# 	# a holding position looks like "(xxx) security name"
-		# 	i = cell_value.find(')', 1, len(cell_value)-1)
-		# 	if i > 0:	# the string looks like '(xxx) yyy'
-		# 		security = {}
-
-		# 		# start populating fields of a security, then save it to the 
-		# 		# security_holding list.
-		# 		token = cell_value[1:i]
-		# 		if (asset_class == 'bond'):
-		# 			security['isin'] = token
-		# 		elif (asset_class == 'equity'):
-		# 			if ('listed_location') in fields:	# it's listed equity
-		# 				security['ticker'] = token
-		# 			else:								# it's preferred shares
-		# 				security['isin'] = token
-
-		# 		security['name'] = cell_value.strip()
-		# 		security['currency'] = currency
-		# 		security['accounting_treatment'] = accounting_treatment
-
-		# 		column = 2	# now start reading fields in column C
-		# 		for field in fields:
-		# 			cell_value = ws.cell_value(row+rows_read, column)
-		# 			if isinstance(cell_value, str):
-		# 				cell_value = cell_value.strip()
-		# 			# logger.debug('{0},{1},{2}'.format(row+rows_read, column, cell_value))
-
-		# 			if field == 'empty_field':	# ignore this field, move to
-		# 										# next column
-		# 				column = column + 1
-		# 				continue
-
-		# 			field_value = validate_and_convert_field_value(field, cell_value)
-
-		# 			# if already has currency assigned (in the case of listed 
-		# 			# equity), check whether the currency value is inconsistent
-		# 			if field == 'currency' and 'currency'in security \
-		# 				and field_value != security['currency']:
-								
-		# 				logger.error('read_sub_section(): inconsistent currency value at row {0}, column {1}'.
-		# 								format(row+rows_read, column))
-		# 				raise ValueError('inconsistent currency value')
-
-		# 			security[field] = field_value
-
-		# 			# if holding amount is zero, stop reading other fields.
-		# 			if (field == 'par_amount' or field == 'number_of_shares') \
-		# 				and field_value == 0:
-		# 				break
-
-		# 			column = column + 1
-		# 			# end of for loop
-					
-		# 		holding.append(security)
-				# # logger.debug(isin)
-
-		elif end_of_sub_section(ws, row+rows_read):
-		# elif start_of_sub_section(cell_value) or end_of_section(cell_value):
-			# the subsection ends
+		elif start_of_sub_section(cell_value) or end_of_section(cell_value):
 			break
 
 		rows_read = rows_read + 1	# move to next row

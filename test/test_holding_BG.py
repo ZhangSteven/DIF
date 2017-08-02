@@ -169,67 +169,50 @@ class TestHoldingBG(unittest2.TestCase):
 
 
 
+    def test_read_holding(self):
+        """
+        Read the CLM BAL 2017-07-27.xls, we get below holdings:
 
-    # def test_read_holding(self):
-    #     """
-    #     Read the CLM BAL 2017-07-27.xls, we get below holdings:
-
-    #     Bond        
-    #                     total   zero holding
-    #     USD (HTM)       3       1
-    #     HKD (HTM)       4       4
-    #     USD (Trading)   1       0
-    #     HKD (Trading)   1       1
-    #     total           9       6
+        Bond        
+                        total   zero holding
+        USD (HTM)       3       1
+        HKD (HTM)       4       4
+        USD (Trading)   1       0
+        HKD (Trading)   1       1
+        total           9       6
                 
-    #     Equity      
-    #                     total   zero holding
-    #     HKD             13      1
-    #     USD             13      11       
-    #     total           26      12
-    #     """
-    #     filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
-    #     wb = open_workbook(filename=filename)
-    #     ws = wb.sheet_by_name('Portfolio Val.')
+        Equity      
+                        total   zero holding
+        HKD             13      1
+        USD             13      11       
+        total           26      12
+        """
+        filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
 
-    #     port_values = {}
-    #     read_holding(ws, port_values)
+        port_values = {}
+        read_holding(ws, port_values)
 
-    #     bond_holding = port_values['bond']
-    #     self.assertEqual(len(bond_holding), 9)
-    #     self.assertEqual(self.count_zero_holding_bond(bond_holding), 6)
+        bond_holding = port_values['bond']
+        self.assertEqual(len(bond_holding), 9)
+        self.assertEqual(self.count_zero_holding_bond(bond_holding), 6)
 
-    #     equity_holding = port_values['equity']
-    #     self.assertEqual(len(equity_holding), 26)
-    #     self.assertEqual(self.count_zero_holding_equity(equity_holding), 12)
+        equity_holding = port_values['equity']
+        self.assertEqual(len(equity_holding), 26)
+        self.assertEqual(self.count_zero_holding_equity(equity_holding), 12)
 
-        # bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM')
-        # self.validate_bond_HTM(bond_holding_HTM_USD)
+        bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM')
+        self.validate_bond_HTM(bond_holding_HTM_USD)
 
-        # bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading')
-        # self.validate_bond_trading(bond_holding_Trading_USD)
+        bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading')
+        self.validate_bond_trading(bond_holding_Trading_USD)
 
-        # bond_holding_HTM_SGD = self.extract_bond_holding(bond_holding, 'SGD', 'HTM')
-        # self.assertEqual(len(bond_holding_HTM_SGD), 10)
-        # self.assertEqual(self.count_zero_holding_bond(bond_holding_HTM_SGD), 10)
+        equity_holding_HKD = self.extract_equity_holding(equity_holding, 'HKD')
+        self.validate_equity(equity_holding_HKD)
 
-        # bond_holding_Trading_SGD = self.extract_bond_holding(bond_holding, 'SGD', 'Trading')
-        # self.assertEqual(len(bond_holding_Trading_SGD), 1)
-        # self.assertEqual(self.count_zero_holding_bond(bond_holding_Trading_SGD), 1)
-
-        # bond_holding_HTM_CNY = self.extract_bond_holding(bond_holding, 'CNY', 'HTM')
-        # self.assertEqual(len(bond_holding_HTM_CNY), 2)
-        # self.assertEqual(self.count_zero_holding_bond(bond_holding_HTM_CNY), 0)
-
-        # bond_holding_Trading_CNY = self.extract_bond_holding(bond_holding, 'CNY', 'Trading')
-        # self.assertEqual(len(bond_holding_Trading_CNY), 15)
-        # self.assertEqual(self.count_zero_holding_bond(bond_holding_Trading_CNY), 13)
-
-        # equity_holding_listed = self.extract_equity_holding(equity_holding, 'HKD')
-        # self.validate_listed_equity(equity_holding_listed)
-
-        # equity_holding_preferred_shares = self.extract_equity_holding(equity_holding, 'USD')
-        # self.validate_preferred_shares(equity_holding_preferred_shares)
+        equity_holding_USD = self.extract_equity_holding(equity_holding, 'USD')
+        self.validate_equity2(equity_holding_USD)
 
 
 
