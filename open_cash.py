@@ -50,8 +50,10 @@ def read_cash(ws, port_values, datemode=0):
 		balance = cash_account['balance']	# retrieve balance
 		currency = cash_account['currency']	# retrieve currency
 		account_type = cash_account['account_type']	# retrieve account type
-		fx_rate = cash_account['fx_rate']	# retrieve FX rate to HKD
-		HKD_equivalent = cash_account['hkd_equivalent']	# retrieve amount in HKD
+		fx_rate = cash_account['fx_rate']	# retrieve FX rate to portfolio 
+											# local currency
+		local_equivalent = cash_account['local_currency_equivalent']	# retrieve 
+											# amount in portfolio local currency
 		
 	"""
 	logger.debug('in read_cash()')
@@ -105,7 +107,10 @@ def read_cash(ws, port_values, datemode=0):
 				this_account['fx_rate'] = get_value(row)
 
 			elif cell_value.startswith('HKD Equiv'):
-				this_account['hkd_equivalent'] = get_value(row)
+				this_account['local_currency_equivalent'] = get_value(row)
+
+			elif cell_value.startswith('MOP Equiv.'):
+				this_account['local_currency_equivalent'] = get_value(row)
 
 	logger.debug('out of read_cash()')
 

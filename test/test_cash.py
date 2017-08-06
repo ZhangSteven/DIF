@@ -74,7 +74,7 @@ class TestCash(unittest2.TestCase):
         self.assertEqual(cash_account['date'], datetime.datetime(2015,12,10))
         self.assertAlmostEqual(cash_account['balance'], 6536572.95)
         self.assertEqual(cash_account['fx_rate'], 1.0)
-        self.assertAlmostEqual(cash_account['hkd_equivalent'], 6536572.95)
+        self.assertAlmostEqual(cash_account['local_currency_equivalent'], 6536572.95)
 
         
 
@@ -92,7 +92,7 @@ class TestCash(unittest2.TestCase):
         self.assertEqual(cash_account['date'], datetime.datetime(2015,12,10))
         self.assertAlmostEqual(cash_account['balance'], 8298021.81)
         self.assertAlmostEqual(cash_account['fx_rate'], 7.7502)
-        self.assertAlmostEqual(cash_account['hkd_equivalent'], 64311328.63)
+        self.assertAlmostEqual(cash_account['local_currency_equivalent'], 64311328.63)
 
 
 
@@ -111,7 +111,7 @@ class TestCash(unittest2.TestCase):
         self.assertEqual(cash_account['date'], datetime.datetime(2015,12,10))
         self.assertAlmostEqual(cash_account['balance'], 386920)
         self.assertAlmostEqual(cash_account['fx_rate'], 1.2037)
-        self.assertAlmostEqual(cash_account['hkd_equivalent'], 465735.604)
+        self.assertAlmostEqual(cash_account['local_currency_equivalent'], 465735.604)
 
 
 
@@ -130,4 +130,4 @@ class TestCash(unittest2.TestCase):
         self.assertEqual(cash_account['date'], datetime.datetime(2015,12,10))
         self.assertAlmostEqual(cash_account['balance'], 0)
         self.assertAlmostEqual(cash_account['fx_rate'], 5.5201)
-        self.assertAlmostEqual(cash_account['hkd_equivalent'], 0)
+        self.assertAlmostEqual(cash_account['local_currency_equivalent'], 0)

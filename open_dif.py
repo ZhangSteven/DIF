@@ -126,7 +126,7 @@ def calculate_cash_total(port_values):
 	total = 0
 	cash_accounts = port_values['cash_accounts']
 	for cash_account in cash_accounts:
-		total = total + cash_account['hkd_equivalent']
+		total = total + cash_account['local_currency_equivalent']
 
 	return total
 
@@ -219,7 +219,7 @@ def write_cash_csv(port_values, output_dir):
 		cash_accounts = port_values['cash_accounts']
 
 		fields = ['account_type', 'account_num', 'currency', 'balance', 
-					'fx_rate', 'hkd_equivalent']
+					'fx_rate', 'local_currency_equivalent']
 
 		portfolio_date = get_portfolio_date(port_values)
 		portfolio_date = convert_datetime_to_string(portfolio_date)
