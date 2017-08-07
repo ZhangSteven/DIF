@@ -10,13 +10,12 @@ from .open_cash import read_cash
 from .open_summary import find_cell_string, read_date, read_cash_holding_total, \
 							populate_value
 from .open_holding import read_holding
-from .open_dif import validate_cash_and_holding
+from .open_dif import validate_cash_and_holding, write_csv
 from .utility import logger, get_input_directory
 
 
 
-def open_bal(file_name, port_values, output_dir=get_input_directory(), 
-				filename_prefix='bal'):
+def open_bal(file_name, port_values, output_dir, output_prefix):
 	"""
 	Open the excel file of the trustee Macau balanced fund or guarantee fund.
 	Read its cash positions, holdings and output to csv files.
@@ -42,7 +41,7 @@ def open_bal(file_name, port_values, output_dir=get_input_directory(),
 	validate_cash_and_holding(port_values)
 
 	# output the cash and holdings into csv files.
-	# return write_csv(port_values, output_dir, filename_prefix)
+	return write_csv(port_values, output_dir, output_prefix)
 
 
 

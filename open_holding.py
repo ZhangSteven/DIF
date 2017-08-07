@@ -411,13 +411,22 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 		if is_security_position(cell_value):
 			security_id = get_security_id(cell_value)
 			security = {}
-			if (asset_class == 'bond'):
+			# if (asset_class == 'bond'):
+			# 	security['isin'] = security_id
+			# elif (asset_class == 'equity'):
+			# 	if ('listed_location') in fields:	# it's listed equity
+			# 		security['ticker'] = security_id
+			# 	else:								# it's preferred shares
+			# 		security['isin'] = security_id
+			m = re.search('^[A-Z]{2}[A-Z0-9]{10}$', security_id)
+			if m is not None:
 				security['isin'] = security_id
-			elif (asset_class == 'equity'):
-				if ('listed_location') in fields:	# it's listed equity
+			else:
+				m = re.search('^[HN]{1}[0-9]{4}$', security_id)
+				if m is not None:
 					security['ticker'] = security_id
-				else:								# it's preferred shares
-					security['isin'] = security_id
+				else:
+					security['security_id'] = security_id
 
 			security['name'] = cell_value.strip()
 			security['currency'] = currency

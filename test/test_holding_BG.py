@@ -436,7 +436,7 @@ class TestHoldingBG(unittest2.TestCase):
             i = i + 1
 
             if (i == 1):    # the first equity
-                self.assertEqual(equity['ticker'], 'US30303M1027')
+                self.assertEqual(equity['isin'], 'US30303M1027')
                 self.assertEqual(equity['name'], '(US30303M1027) Facebook Inc.')
                 self.assertEqual(equity['currency'], 'USD')
                 self.assertEqual(equity['accounting_treatment'], 'Trading')
@@ -454,7 +454,7 @@ class TestHoldingBG(unittest2.TestCase):
                 self.assertEqual(len(equity), 15)
 
             if (i == 2):    # the last non-zero holding
-                self.assertEqual(equity['ticker'], 'US01609W1027')
+                self.assertEqual(equity['isin'], 'US01609W1027')
                 self.assertEqual(equity['name'], '(US01609W1027) Alibaba Group Holding')
                 self.assertEqual(equity['currency'], 'USD')
                 self.assertEqual(equity['accounting_treatment'], 'Trading')

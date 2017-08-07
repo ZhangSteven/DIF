@@ -19,5 +19,6 @@ class TestBAL(unittest2.TestCase):
     def test_consolidate_cash(self):
         filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
         port_values = {}
-        open_bal(filename, port_values)
+        output_dir = os.path.join(get_current_path(), 'samples')
+        open_bal(filename, port_values, output_dir, 'bal')
 
