@@ -85,7 +85,7 @@ def read_portfolio_summary(ws, port_values):
 	# the one we want to use.
 	n = find_cell_string(ws, row, 0, 'Unit Price')
 	row = row + n
-	populate_value(port_values, 'unit_price', ws, row, 1)
+	populate_value(port_values, 'unit_price', ws, row, 2)
 
 
 

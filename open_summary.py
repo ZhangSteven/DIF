@@ -17,6 +17,9 @@ class CellNotFound(Exception):
 	"""
 	pass
 
+class TargetValueNotFound(Exception):
+	pass
+
 
 
 # def open_excel_summary(file_name):
@@ -72,8 +75,6 @@ def read_portfolio_summary(ws, port_values):
 	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
 	row = row + n 	# move to that row
 	populate_value(port_values, 'number_of_units', ws, row, 2)
-	# cell_value = ws.cell_value(row, 2)	# read value at column C
-	# populate_value(port_values, 'number_of_units', cell_value, row, 2)
 
 	# the first 'unit price' is before performance fee,
 	# so we do not use it
@@ -83,16 +84,12 @@ def read_portfolio_summary(ws, port_values):
 	n = find_cell_string(ws, row, 0, 'Net Asset Value')
 	row = row + n
 	populate_value(port_values, 'nav', ws, row, 9)
-	# cell_value = ws.cell_value(row, 9)	# read value at column C
-	# populate_value(port_values, 'nav', cell_value, row, 9)
 
 	# the second 'unit price' after 'net asset value' is the
 	# the one we want to use.
 	n = find_cell_string(ws, row, 0, 'Unit Price')
 	row = row + n
 	populate_value(port_values, 'unit_price', ws, row, 2)
-	# cell_value = ws.cell_value(row, 2)	# read value at column C
-	# populate_value(port_values, 'unit_price', cell_value, row, 2)
 			
 	logger.debug('out of read_portfolio_summary()')
 
@@ -111,14 +108,20 @@ def populate_value(port_values, key, ws, row, column):
 	key			: needs to be a string, indicating the name of the value.
 	"""
 	logger.debug('in populate_value()')
+
+	# look for a float number in (row, column) or (row, column-1)
+	# We try two locations, because DIF, Balanced Fund and Guarantee
+	# fund put the numbers sometimes in column b, sometimes in column C.
 	cell_value = ws.cell_value(row, column)
-	if (isinstance(cell_value, float)) and cell_value > 0:
-		port_values[key] = cell_value
-	else:
+	if not isinstance(cell_value, float):
+		cell_value = ws.cell_value(row, column-1)
+
+	if not isinstance(cell_value, float) or cell_value <= 0:
 		logger.error('cell {0},{1} is not a valid {2}: {3}'
 						.format(row, column, key, cell_value))
 		raise ValueError(key)
-
+	
+	port_values[key] = cell_value
 	logger.debug('out of populate_value()')
 
 
@@ -193,16 +196,15 @@ def read_cash_holding_total(ws, row, port_values):
 			continue
 
 		count = count + 1	# assume we find one item
-		target_value = ws.cell_value(row+rows_read, 7)	# column H
 		
-		if cell_value.startswith('Cash') and isinstance(target_value, float):
-			port_values['cash_total'] = target_value
-		elif cell_value.startswith('Debt Securities') and isinstance(target_value, float):
-			debt_value = target_value
-		elif cell_value.startswith('Debt Amortization') and isinstance(target_value, float):
-			debt_amortization = target_value
-		elif cell_value.startswith('Equities') and isinstance(target_value, float):
-			port_values['equity_total'] = target_value
+		if cell_value.startswith('Cash'):
+			port_values['cash_total'] = get_target_value(ws, row+rows_read)
+		elif cell_value.startswith('Debt Securities'):
+			debt_value = get_target_value(ws, row+rows_read)
+		elif cell_value.startswith('Debt Amortization'):
+			debt_amortization = get_target_value(ws, row+rows_read)
+		elif cell_value.startswith('Equities'):
+			port_values['equity_total'] = get_target_value(ws, row+rows_read)
 		else:
 			count = count - 1	# item not found, reverse the count
 
@@ -216,6 +218,28 @@ def read_cash_holding_total(ws, row, port_values):
 
 	port_values['bond_total'] = debt_value + debt_amortization
 	return rows_read
+
+
+
+def get_target_value(ws, row):
+	"""
+	search for the following pattern in column 1, 2, onwards on the same row.
+
+	column 0		column 1, ..., column N, column N+1
+	<field name>					float x, float y
+
+	two float number occurs on two consecutive columns, then return the second
+	float number.
+	"""
+	column = 1
+	while column < ws.ncols-1:
+		if isinstance(ws.cell_value(row, column), float) and \
+			isinstance(ws.cell_value(row, column+1), float):
+			return ws.cell_value(row, column+1)
+		column = column + 1
+
+	logger.error('get_target_value(): failed to get target value on row {0}'.foramt(row))
+	raise TargetValueNotFound()
 
 
 

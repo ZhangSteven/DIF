@@ -85,6 +85,8 @@ class TestCashBAL(unittest2.TestCase):
         """
         Verify the USD balance from Industrial and Commercial Bank of China (Macau) Ltd
         """
+        self.assertEqual(cash_account['account_num'], '0119100200002877345')
+        self.assertEqual(cash_account['account_type'], 'Saving Account')
         self.assertEqual(cash_account['date'], datetime.datetime(2017,7,27))
         self.assertAlmostEqual(cash_account['balance'], 0)
         self.assertAlmostEqual(cash_account['fx_rate'], 8.04373577248334)

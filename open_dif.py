@@ -229,7 +229,10 @@ def map_bank_to_custodian(bank_name):
 		'JPMorgan Chase Bank, N.A.':'JPM',
 		'Industrial and Commercial Bank of China (Macau) Ltd':'ICBCMACAU',
 		'Citibank N.A.':'CITI',
-		'China Guangfa Bank Co., Ltd Macau Branch':'GUANGFA_MACAU'
+		'China Guangfa Bank Co., Ltd Macau Branch':'GUANGFA_MACAU',
+
+		# For broker Morgan Stanley
+		'Morgan Stanley & Co. International plc.':'Morgan_Stanley'
 	}
 	try:
 		return name_map[bank_name]

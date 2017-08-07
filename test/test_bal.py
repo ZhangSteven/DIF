@@ -30,6 +30,18 @@ class TestBAL(unittest2.TestCase):
 
 
 
+    def test_summary2(self):
+        filename = os.path.join(get_current_path(), 'samples', 'CLM GNT 2017-07-27 changed.xls')
+        port_values = {}
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Sum.')
+        read_portfolio_summary(ws, port_values)
+        self.assertEqual(port_values['date'], datetime.datetime(2017,7,27))
+        self.assertEqual(port_values['portfolio_id'], '30003')
+        self.assertAlmostEqual(port_values['number_of_units'], 77954611.1195737)
+        self.assertAlmostEqual(port_values['unit_price'], 18.433547)
+
+
 
     def test_bal(self):
         filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
@@ -37,3 +49,10 @@ class TestBAL(unittest2.TestCase):
         output_dir = os.path.join(get_current_path(), 'samples')
         open_bal(filename, port_values, output_dir, 'bal')
 
+
+
+    def test_bal2(self):
+        filename = os.path.join(get_current_path(), 'samples', 'CLM GNT 2017-07-27 changed.xls')
+        port_values = {}
+        output_dir = os.path.join(get_current_path(), 'samples')
+        open_bal(filename, port_values, output_dir, 'gnt')

@@ -88,7 +88,11 @@ def read_cash(ws, port_values, datemode=0):
 				this_account['bank'] = get_value(row)
 
 			elif cell_value.startswith('Account No.'):
-				this_account['account_num'] = get_value(row)
+				n = get_value(row)
+				if isinstance(n, float):
+					n = str(int(n))
+				this_account['account_num'] = n
+				# this_account['account_num'] = get_value(row)
 
 			elif cell_value.startswith('Account Type'):
 				this_account['account_type'] = get_value(row)
