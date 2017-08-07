@@ -73,8 +73,9 @@ def read_portfolio_summary(ws, port_values):
 
 	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
 	row = row + n 	# move to that row
-	cell_value = ws.cell_value(row, 2)	# read value at column C
-	populate_value(port_values, 'number_of_units', cell_value, row, 2)
+	populate_value(port_values, 'number_of_units', ws, row, 2)
+	# cell_value = ws.cell_value(row, 2)	# read value at column C
+	# populate_value(port_values, 'number_of_units', cell_value, row, 2)
 
 	# the first 'unit price' is before performance fee,
 	# so we do not use it
@@ -83,54 +84,28 @@ def read_portfolio_summary(ws, port_values):
 
 	n = find_cell_string(ws, row, 0, 'Net Asset Value')
 	row = row + n
-	cell_value = ws.cell_value(row, 9)	# read value at column C
-	populate_value(port_values, 'nav', cell_value, row, 9)
+	populate_value(port_values, 'nav', ws, row, 9)
+	# cell_value = ws.cell_value(row, 9)	# read value at column C
+	# populate_value(port_values, 'nav', cell_value, row, 9)
 
 	# the second 'unit price' after 'net asset value' is the
 	# the one we want to use.
 	n = find_cell_string(ws, row, 0, 'Unit Price')
 	row = row + n
-	cell_value = ws.cell_value(row, 2)	# read value at column C
-	populate_value(port_values, 'unit_price', cell_value, row, 2)
-
-	# for row in range(ws.nrows):
-	# while row < ws.nrows:
-			
-	# 	# search the first column
-	# 	cell_value = ws.cell_value(row, 0)
-	# 	cell_type = ws.cell_type(row, 0)
-
-	# 	if (cell_value.startswith('Total Units Held at this Valuation  Date')):
-	# 		cell_value = ws.cell_value(row, 2)	# read value at column C
-	# 		populate_value(port_values, 'number_of_units', cell_value, row, 2)
-
-	# 	elif (cell_value.startswith('Unit Price')):
-	# 		if count == 0:
-	# 			# there are two cells in column A that shows 'Unit Price',
-	# 			# but only the second cell contains the right value (after
-	# 			# performance fee)
-	# 			count = count + 1
-	# 		else:
-	# 			cell_value = ws.cell_value(row, 2)	# read value at column C
-	# 			populate_value(port_values, 'unit_price', cell_value, row, 2)
-
-	# 	elif (cell_value == 'Net Asset Value'):
-	# 		cell_value = ws.cell_value(row, 9)
-	# 		populate_value(port_values, 'nav', cell_value, row, 9)
-
-	# 	row = row + 1
-	# 	# end of while loop
+	populate_value(port_values, 'unit_price', ws, row, 2)
+	# cell_value = ws.cell_value(row, 2)	# read value at column C
+	# populate_value(port_values, 'unit_price', cell_value, row, 2)
 			
 	logger.debug('out of read_portfolio_summary()')
 
 
 
-def populate_value(port_values, key, cell_value, row, column):
+def populate_value(port_values, key, ws, row, column):
 	"""
 	For the number of units, nav and unit price, they have the same validation
 	process, so we put it here.
 
-	If cell_value is valid, assign it to the port_values dictionary. Otherwise
+	If cell value is valid, assign it to the port_values dictionary. Otherwise
 	throw an ValueError exception with the msg to indicate something is wrong.
 
 	port_values	: the dictionary holding the portfolio values read from
@@ -138,7 +113,7 @@ def populate_value(port_values, key, cell_value, row, column):
 	key			: needs to be a string, indicating the name of the value.
 	"""
 	logger.debug('in populate_value()')
-
+	cell_value = ws.cell_value(row, column)
 	if (isinstance(cell_value, float)) and cell_value > 0:
 		port_values[key] = cell_value
 	else:

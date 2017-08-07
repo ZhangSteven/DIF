@@ -7,8 +7,10 @@
 
 from xlrd import open_workbook
 from .open_cash import read_cash
-from .open_summary import read_portfolio_summary
+from .open_summary import find_cell_string, read_date, read_cash_holding_total, \
+							populate_value
 from .open_holding import read_holding
+from .open_dif import validate_cash_and_holding
 from .utility import logger, get_input_directory
 
 
@@ -37,10 +39,41 @@ def open_bal(file_name, port_values, output_dir=get_input_directory(),
 	read_holding(ws, port_values)
 
 	# make sure the holding and cash are read correctly
-	validate_cash_and_holding(port_values)
+	# validate_cash_and_holding(port_values)
 
 	# output the cash and holdings into csv files.
-	return write_csv(port_values, output_dir, filename_prefix)
+	# return write_csv(port_values, output_dir, filename_prefix)
+
+
+
+def read_portfolio_summary(ws, port_values):
+	"""
+	Similar to the read_portfolio_summary() function in open_summary.py,
+	this function reads the portfolio summary of balanced fund and guarantee
+	fund. The difference compared to DIF portfolio summary is:
+
+	1. There is no net asset value in balanced/guarantee fund.
+	2. The unit price value is in column B instead of column C.
+	"""
+	logger.debug('in read_portfolio_summary()')
+
+	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
+	d = read_date(ws, row, 3)
+	port_values['date'] = d
+
+	# read the summary of cash and holdings
+	n = read_cash_holding_total(ws, row, port_values)
+	row = row + n
+
+	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
+	row = row + n 	# move to that row
+	populate_value(port_values, 'number_of_units', ws, row, 2)
+
+	# the second 'unit price' after 'net asset value' is the
+	# the one we want to use.
+	n = find_cell_string(ws, row, 0, 'Unit Price')
+	row = row + n
+	populate_value(port_values, 'unit_price', ws, row, 1)
 
 
 
