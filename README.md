@@ -33,6 +33,12 @@ To do
 1. Modify the error checking code, to include the sheet name being read.
 
 
++++++++++++++++++++++
+ver 0.2201 @ 2017-8-7
++++++++++++++++++++++
+1. Fix a little bit in output csv filenames.
+
+
 
 +++++++++++++++++++++
 ver 0.22 @ 2017-8-7

@@ -71,7 +71,7 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	validate_cash_and_holding(port_values)
 
 	# output the cash and holdings into csv files.
-	return write_csv(port_values, output_dir, 'DIF')
+	return write_csv(port_values, output_dir, 'DIF_')
 
 
 
@@ -197,9 +197,7 @@ def create_csv_file_name(date_string, output_dir, file_prefix, file_suffix):
 	Create the output csv file name based on the date string, as well as
 	the file suffix: cash, afs_positions, or htm_positions
 	"""
-	# csv_file = output_dir + '\\DIF_' + date_string + '_' + file_suffix + '.csv'
-	# return csv_file
-	csv_filename = "".join([file_prefix, '_', date_string, '_', file_suffix, '.csv'])
+	csv_filename = "".join([file_prefix, date_string, '_', file_suffix, '.csv'])
 	return os.path.join(output_dir, csv_filename)
 
 
