@@ -32,6 +32,9 @@ class InconsistentExpenseDate(Exception):
 class InvalidTickerFormat(Exception):
 	pass
 
+class CustodianNotFound(Exception):
+	pass
+	
 
 
 def open_dif(file_name, port_values, output_dir=get_input_directory()):
@@ -44,6 +47,8 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	ws = wb.sheet_by_name('Portfolio Sum.')
 	read_portfolio_summary(ws, port_values)
 	
+	port_values['portfolio_id'] = '19437'
+
 	# find sheets that contain cash
 	sheet_names = wb.sheet_names()
 	for sn in sheet_names:
@@ -210,6 +215,30 @@ def write_csv(port_values, output_dir, filename_prefix):
 
 
 
+def map_bank_to_custodian(bank_name):
+	"""
+	Map the bank name in a cash account to the custodian name used in Geneva, 
+	e.g.,
+
+	Bank of China (Hong Kong) Ltd --> BOCHK
+	"""
+	name_map = {
+		'Bank of China (Hong Kong) Ltd':'BOCHK',
+		'Luso International Banking Ltd.':'LUSO',
+		'Bank of China Ltd. (Macau Branch)':'BOCMACAU',
+		'JPMorgan Chase Bank, N.A.':'JPM',
+		'Industrial and Commercial Bank of China (Macau) Ltd':'ICBCMACAU',
+		'Citibank N.A.':'CITI',
+		'China Guangfa Bank Co., Ltd Macau Branch':'GUANGFA_MACAU'
+	}
+	try:
+		return name_map[bank_name]
+	except KeyError:
+		logger.error('map_bank_to_custodian(): {0} is not a valid bank name'.format(bank_name))
+		raise CustodianNotFound()
+
+
+
 def write_cash_csv(port_values, output_dir, filename_prefix):
 	portfolio_date = get_portfolio_date(port_values)
 	portfolio_date = convert_datetime_to_string(portfolio_date)
@@ -221,19 +250,22 @@ def write_cash_csv(port_values, output_dir, filename_prefix):
 
 		cash_accounts = port_values['cash_accounts']
 
-		fields = ['account_type', 'account_num', 'currency', 'balance', 
-					'fx_rate', 'local_currency_equivalent']
+		fields = ['portfolio', 'custodian', 'date', 'account_type', 
+					'account_num', 'currency', 'balance', 'fx_rate', 
+					'local_currency_equivalent']
+		file_writer.writerow(fields)
 
-		portfolio_date = get_portfolio_date(port_values)
-		portfolio_date = convert_datetime_to_string(portfolio_date)
-
-		file_writer.writerow(['portfolio', 'custodian', 'date'] + fields)
 		for cash_account in cash_accounts:
-			row = ['19437', 'BOCHK', portfolio_date]
+			row = []
 			for fld in fields:
-				item = cash_account[fld]
 				if fld == 'date':
 					item = portfolio_date
+				elif fld == 'portfolio':
+					item = port_values['portfolio_id']
+				elif fld == 'custodian':
+					item = map_bank_to_custodian(cash_account['bank'])
+				else:
+					item = cash_account[fld]
 				row.append(item)
 
 			file_writer.writerow(row)

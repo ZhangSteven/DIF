@@ -6,12 +6,21 @@
 #
 
 from xlrd import open_workbook
+import re
 from .open_cash import read_cash
 from .open_summary import find_cell_string, read_date, read_cash_holding_total, \
 							populate_value
 from .open_holding import read_holding
 from .open_dif import validate_cash_and_holding, write_csv
 from .utility import logger, get_input_directory
+
+
+
+class FundNameNotFound(Exception):
+	pass
+
+class FundIdNotFound(Exception):
+	pass
 
 
 
@@ -56,9 +65,13 @@ def read_portfolio_summary(ws, port_values):
 	"""
 	logger.debug('in read_portfolio_summary()')
 
-	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
-	d = read_date(ws, row, 3)
-	port_values['date'] = d
+	row = find_cell_string(ws, 0, 0, 'Fund Name')
+	port_values['portfolio_id'] = get_fund_id(ws.cell_value(row, 0))
+
+	n = find_cell_string(ws, row, 0, 'Valuation Period :')
+	row = row + n
+	# print('row={0}'.format(row))
+	port_values['date'] = read_date(ws, row, 3)
 
 	# read the summary of cash and holdings
 	n = read_cash_holding_total(ws, row, port_values)
@@ -73,6 +86,31 @@ def read_portfolio_summary(ws, port_values):
 	n = find_cell_string(ws, row, 0, 'Unit Price')
 	row = row + n
 	populate_value(port_values, 'unit_price', ws, row, 1)
+
+
+
+def get_fund_id(name_string):
+	"""
+	Extract fund name from the string, it may look like:
+
+	Fund Name (基金名稱): CHINA LIFE MACAU BRANCH BALANCED OPEN FUND 中國人壽澳門分公司開放式平衡基金
+	
+	We need to get the portion starting from "China LIFE"
+	"""
+	m = re.search('Fund Name.*:\s*(.*)', name_string)
+	if m is not None:
+		fund_name = m.group(1).strip()
+	else:
+		logger.error('get_fund_id(): failed to extract fund name from {0}'.format(name_string))
+		raise FundNameNotFound()
+
+	if fund_name.startswith('CHINA LIFE MACAU BRANCH BALANCED'):
+		return '30004'
+	elif fund_name.startswith('CHINA LIFE MACAU BRANCH GUARANTEE'):
+		return '30003'
+	else:
+		logger.error('get_fund_id(): failed to map to fund id: {0}'.format(fund_name))
+		raise FundIdNotFound()
 
 
 

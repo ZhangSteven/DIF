@@ -3,9 +3,10 @@ Test the open_bal() method to open the trustee Macau Balanced Fund.
 """
 
 import unittest2
-import os
+import os, datetime
+from xlrd import open_workbook
 from DIF.utility import get_current_path
-from DIF.open_bal import open_bal
+from DIF.open_bal import open_bal, read_portfolio_summary
 
 
 
@@ -16,7 +17,21 @@ class TestBAL(unittest2.TestCase):
 
 
 
-    def test_consolidate_cash(self):
+    def test_summary(self):
+        filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
+        port_values = {}
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Sum.')
+        read_portfolio_summary(ws, port_values)
+        self.assertEqual(port_values['date'], datetime.datetime(2017,7,27))
+        self.assertEqual(port_values['portfolio_id'], '30004')
+        self.assertAlmostEqual(port_values['number_of_units'], 4837037.6736096)
+        self.assertAlmostEqual(port_values['unit_price'], 11.892255)
+
+
+
+
+    def test_bal(self):
         filename = os.path.join(get_current_path(), 'samples', 'CLM BAL 2017-07-27.xls')
         port_values = {}
         output_dir = os.path.join(get_current_path(), 'samples')

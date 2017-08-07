@@ -63,9 +63,7 @@ def read_portfolio_summary(ws, port_values):
 	logger.debug('in read_portfolio_summary()')
 
 	row = find_cell_string(ws, 0, 0, 'Valuation Period :')
-	# d = read_date(ws, row, 1)
-	d = read_date(ws, row, 3)
-	port_values['date'] = d
+	port_values['date'] = read_date(ws, row, 3)
 
 	# read the summary of cash and holdings
 	n = read_cash_holding_total(ws, row, port_values)
@@ -147,14 +145,13 @@ def read_date(ws, row, column):
 	"""
 	datemode = get_datemode()
 	cell_value = ws.cell_value(row, column)
+	# print(row, column, cell_value)
 	try:
-		d = xldate_as_datetime(cell_value, datemode)
+		return xldate_as_datetime(cell_value, datemode)
 	except:
 		logger.error('read_date(): failed to convert value:{0} to date'.
 						format(cell_value))
 		raise
-
-	return d
 
 
 
