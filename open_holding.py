@@ -141,8 +141,10 @@ def read_currency(cell_value):
 		raise CurrencyNotFound()
 	else:
 		currency = m.group(1)
-		if currency == 'US$':
-			currency = 'USD'	# make the correction
+		# if currency == 'US$':
+		# 	currency = 'USD'	# make the correction
+		if currency[-1] == '$':
+			currency = currency[:-1] + 'D'	# replace $ with D
 
 	return currency
 

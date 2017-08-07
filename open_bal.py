@@ -39,7 +39,7 @@ def open_bal(file_name, port_values, output_dir=get_input_directory(),
 	read_holding(ws, port_values)
 
 	# make sure the holding and cash are read correctly
-	# validate_cash_and_holding(port_values)
+	validate_cash_and_holding(port_values)
 
 	# output the cash and holdings into csv files.
 	# return write_csv(port_values, output_dir, filename_prefix)
