@@ -30,18 +30,14 @@ see http://stackoverflow.com/questions/17890087/how-to-run-specific-test-in-nose
 To do
 +++++++++
 
-1. Solve the problem when there is one or more blank lines in between positions in a holdings section.
-
-2. Solve the problem of miss spelled 'HKD Equiv' to 'USD Equiv.'
-
-3. Modify the error checking code, to include the sheet name being read.
+1. Modify the error checking code, to include the sheet name being read.
 
 
 
 +++++++++++++++++++++
-ver 0.22 @ 2017-8-2
+ver 0.22 @ 2017-8-7
 +++++++++++++++++++++
-1. Added support for 
+1. Added support for trustee Macau Balanced fund and Guarantee fund.
 
 
 

@@ -48,6 +48,7 @@ def open_dif(file_name, port_values, output_dir=get_input_directory()):
 	read_portfolio_summary(ws, port_values)
 	
 	port_values['portfolio_id'] = '19437'
+	port_values['position_custodian'] = 'BOCHK'
 
 	# find sheets that contain cash
 	sheet_names = wb.sheet_names()
@@ -305,7 +306,8 @@ def write_htm_holding_csv(port_values, output_dir, filename_prefix):
 			if bond['par_amount'] == 0 or bond['accounting_treatment'] != 'HTM':
 				continue
 
-			row = ['19437', portfolio_date, 'BOCHK']
+			# row = ['19437', portfolio_date, 'BOCHK']
+			row = [port_values['portfolio_id'], portfolio_date, port_values['position_custodian']]
 			investment_ids = get_investment_Ids('19437', 'ISIN', bond['isin'], 
 												bond['accounting_treatment'])
 			for id in investment_ids:
@@ -355,8 +357,8 @@ def write_afs_holding_csv(port_values, output_dir, filename_prefix):
 			if bond['par_amount'] == 0 or bond['accounting_treatment'] != 'Trading':
 				continue
 
-			row = ['19437', portfolio_date, 'BOCHK']
-
+			# row = ['19437', portfolio_date, 'BOCHK']
+			row = [port_values['portfolio_id'], portfolio_date, port_values['position_custodian']]
 			for fld in fields:
 				if fld == 'quantity':
 					fld = 'par_amount'
@@ -374,8 +376,8 @@ def write_afs_holding_csv(port_values, output_dir, filename_prefix):
 			if equity['number_of_shares'] == 0 or equity['accounting_treatment'] != 'Trading':
 				continue
 
-			row = ['19437', portfolio_date, 'BOCHK']
-
+			# row = ['19437', portfolio_date, 'BOCHK']
+			row = [port_values['portfolio_id'], portfolio_date, port_values['position_custodian']]
 			for fld in fields:
 				if fld == 'quantity':
 					fld = 'number_of_shares'

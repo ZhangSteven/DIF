@@ -22,6 +22,9 @@ class FundNameNotFound(Exception):
 class FundIdNotFound(Exception):
 	pass
 
+class PositionCustodianNotFound(Exception):
+	pass
+	
 
 
 def open_bal(file_name, port_values, output_dir, output_prefix):
@@ -62,11 +65,15 @@ def read_portfolio_summary(ws, port_values):
 
 	1. There is no net asset value in balanced/guarantee fund.
 	2. The unit price value is in column B instead of column C.
+
+	Also, here we set the portfolio id and position custodian for Balanced
+	and Guarantee fund.
 	"""
 	logger.debug('in read_portfolio_summary()')
 
 	row = find_cell_string(ws, 0, 0, 'Fund Name')
 	port_values['portfolio_id'] = get_fund_id(ws.cell_value(row, 0))
+	port_values['position_custodian'] = get_position_custodian(port_values['portfolio_id'])
 
 	n = find_cell_string(ws, row, 0, 'Valuation Period :')
 	row = row + n
@@ -111,6 +118,23 @@ def get_fund_id(name_string):
 	else:
 		logger.error('get_fund_id(): failed to map to fund id: {0}'.format(fund_name))
 		raise FundIdNotFound()
+
+
+
+def get_position_custodian(portfolio_id):
+	"""
+	Return the custodian bank for its security holdings based on the portfolio
+	id.
+	"""
+	c_map = {
+		'30003':'ICBCMACAU',
+		'30004':'ICBCMACAU'
+	}
+	try:
+		return c_map[portfolio_id]
+	except KeyError:
+		logger.error('get_position_custodian(): failed to locate custodian for portfolio {0}'.format(portfolio_id))
+		raise PositionCustodianNotFound()
 
 
 
