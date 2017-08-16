@@ -10,9 +10,11 @@ from DIF.open_cash import read_cash
 from DIF.open_summary import read_portfolio_summary, get_portfolio_date
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
-from DIF.utility import logger, get_input_directory
+from DIF.utility import get_input_directory
 from investment_lookup.id_lookup import get_investment_Ids
 import csv, os
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -442,7 +444,9 @@ def convert_to_BLP_ticker(ticker):
 
 # we can execute the open_dif() from command line with an input file name
 if __name__ == '__main__':
-	import sys
+	import sys, logging.config
+	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
+
 	if len(sys.argv) < 2:
 		print('use python open_dif.py <input_file>')
 		sys.exit(1)

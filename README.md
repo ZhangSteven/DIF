@@ -34,6 +34,17 @@ To do
 
 
 +++++++++++++++++++++
+ver 0.23 @ 2017-8-16
++++++++++++++++++++++
+1. Fixed a bug in logging. Previously it used utility.py to create a root logger, but now every module uses the standard way to obtain a logger:
+	
+	logger = logging.getLogger(__name__)
+
+	when modules from other packages call open_dif.py, and if those modules configure their own root logger, there is a conflict. The new way of obtaining a logger solves this problem.
+
+
+
++++++++++++++++++++++
 ver 0.2201 @ 2017-8-7
 +++++++++++++++++++++
 1. Fix a little bit in output csv filenames.

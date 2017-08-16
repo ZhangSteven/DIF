@@ -3,6 +3,7 @@ __pycache__/
 
 # ignore the log file
 dif.log
+dif.log.*
 
 # ignore the .csv files
 *.csv

@@ -12,7 +12,9 @@ from .open_summary import find_cell_string, read_date, read_cash_holding_total, 
 							populate_value
 from .open_holding import read_holding
 from .open_dif import validate_cash_and_holding, write_csv
-from .utility import logger, get_input_directory
+from .utility import get_input_directory
+import logging
+logger = logging.getLogger(__name__)
 
 
 

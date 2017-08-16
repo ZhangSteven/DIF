@@ -8,8 +8,9 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
 import datetime
-from DIF.utility import logger, retrieve_or_create
-
+from DIF.utility import retrieve_or_create
+import logging
+logger = logging.getLogger(__name__)
 
 
 # def open_excel_cash(file_name):

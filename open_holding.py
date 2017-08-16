@@ -8,7 +8,9 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
 import datetime, re
-from DIF.utility import logger, get_datemode, retrieve_or_create
+from DIF.utility import get_datemode, retrieve_or_create
+import logging
+logger = logging.getLogger(__name__)
 
 
 

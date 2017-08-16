@@ -5,9 +5,11 @@
 
 from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
-from DIF.utility import logger, get_datemode, retrieve_or_create
+from DIF.utility import get_datemode, retrieve_or_create
 from DIF.open_holding import is_empty_cell
 from DIF.open_summary import read_date, find_cell_string, get_portfolio_date
+import logging
+logger = logging.getLogger(__name__)
 
 
 
