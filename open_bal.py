@@ -7,12 +7,12 @@
 
 from xlrd import open_workbook
 import re
-from .open_cash import read_cash
-from .open_summary import find_cell_string, read_date, read_cash_holding_total, \
+from DIF.open_cash import read_cash
+from DIF.open_summary import find_cell_string, read_date, read_cash_holding_total, \
 							populate_value
-from .open_holding import read_holding
-from .open_dif import validate_cash_and_holding, write_csv
-from .utility import get_input_directory
+from DIF.open_holding import read_holding
+from DIF.open_dif import validate_cash_and_holding, write_csv
+from DIF.utility import get_input_directory
 import logging
 logger = logging.getLogger(__name__)
 
@@ -173,26 +173,3 @@ def find_n_merge(cash_account, cash_accounts):
 			return True
 
 	return False
-
-
-
-
-if __name__ == '__main__':
-	import sys, os
-	if len(sys.argv) < 2:
-		print('use python open_bal.py <input_file>')
-		sys.exit(1)
-
-	filename = os.path.join(get_input_directory(), sys.argv[1])
-	if not os.path.exists(filename):
-		print('{0} does not exist'.format(filename))
-		sys.exit(1)
-
-	port_values = {}
-	try:
-		open_bal(filename, port_values)
-	except:
-		logger.exception('open_bal():')
-		print('something goes wrong, check log file.')
-	else:
-		print('OK')
