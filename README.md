@@ -33,6 +33,14 @@ To do
 1. Modify the error checking code, to include the sheet name being read.
 
 
+
++++++++++++++++++++++
+ver 0.2301 @ 2017-8-16
++++++++++++++++++++++
+1. Changed logging level from ERROR to WARNING when an expense item is not valid, in open_expense.py, because invalid expense items are simply ignored and not included in total expense calculations.
+
+
+
 +++++++++++++++++++++
 ver 0.23 @ 2017-8-16
 +++++++++++++++++++++

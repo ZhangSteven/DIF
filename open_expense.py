@@ -170,7 +170,7 @@ def read_expense_item(ws, row, fields, expenses):
 
 		if fld in ['value_date', 'amount', 'fx_rate', 'hkd_equivalent']:
 			if not isinstance(cell_value, float):
-				logger.error('read_expense_item(): field {0} is not float, value = {1}'.
+				logger.warning('read_expense_item(): field {0} is not float, value = {1}'.
 							format(fld, cell_value))
 				raise InvalidExpenseItem('invalid field type')
 
