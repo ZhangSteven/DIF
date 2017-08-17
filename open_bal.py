@@ -86,6 +86,10 @@ def read_portfolio_summary(ws, port_values):
 	n = read_cash_holding_total(ws, row, port_values)
 	row = row + n
 
+	n = find_cell_string(ws, row, 0, 'Due to, Due from')
+	row = row + n
+	populate_value(port_values, 'nav', ws, row, 10)
+
 	n = find_cell_string(ws, row, 0, 'Total Units Held at this Valuation  Date')
 	row = row + n 	# move to that row
 	populate_value(port_values, 'number_of_units', ws, row, 2)

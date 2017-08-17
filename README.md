@@ -33,6 +33,12 @@ To do
 1. Modify the error checking code, to include the sheet name being read.
 
 
++++++++++++++++++++++
+ver 0.24 @ 2017-8-17
++++++++++++++++++++++
+1. Added a few lines to open_bal.read_portfolio_summary() function, to read NAV for balanced and guarantee funds.
+
+
 
 +++++++++++++++++++++
 ver 0.2301 @ 2017-8-16

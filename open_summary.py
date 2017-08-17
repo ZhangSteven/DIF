@@ -109,7 +109,7 @@ def populate_value(port_values, key, ws, row, column):
 					the excel.
 	key			: needs to be a string, indicating the name of the value.
 	"""
-	logger.debug('in populate_value()')
+	logger.info('populate_value(): enter')
 
 	# look for a float number in (row, column) or (row, column-1)
 	# We try two locations, because DIF, Balanced Fund and Guarantee
@@ -119,12 +119,11 @@ def populate_value(port_values, key, ws, row, column):
 		cell_value = ws.cell_value(row, column-1)
 
 	if not isinstance(cell_value, float) or cell_value <= 0:
-		logger.error('cell {0},{1} is not a valid {2}: {3}'
+		logger.error('populate_value(): cell {0},{1} is not a valid {2}: {3}'
 						.format(row, column, key, cell_value))
 		raise ValueError(key)
 	
 	port_values[key] = cell_value
-	logger.debug('out of populate_value()')
 
 
 

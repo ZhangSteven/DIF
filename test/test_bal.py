@@ -27,6 +27,7 @@ class TestBAL(unittest2.TestCase):
         self.assertEqual(port_values['portfolio_id'], '30004')
         self.assertAlmostEqual(port_values['number_of_units'], 4837037.6736096)
         self.assertAlmostEqual(port_values['unit_price'], 11.892255)
+        self.assertAlmostEqual(port_values['nav'], 57523285.86)
 
 
 
@@ -40,6 +41,7 @@ class TestBAL(unittest2.TestCase):
         self.assertEqual(port_values['portfolio_id'], '30003')
         self.assertAlmostEqual(port_values['number_of_units'], 77954611.1195737)
         self.assertAlmostEqual(port_values['unit_price'], 18.433547)
+        self.assertAlmostEqual(port_values['nav'], 1436979977.22)
 
 
 
