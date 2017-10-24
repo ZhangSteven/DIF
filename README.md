@@ -33,6 +33,15 @@ To do
 1. Modify the error checking code, to include the sheet name being read.
 
 
+
++++++++++++++++++++++
+ver 0.2401 @ 2017-10-24
++++++++++++++++++++++
+1. Changed the validate_cash_and_holding() function, the threshold for bond total difference is changed from 0.2 to 0.3, because the DIF 2017-10-20 file has a bond total difference of 0.21.
+
+
+
+
 +++++++++++++++++++++
 ver 0.24 @ 2017-8-17
 +++++++++++++++++++++

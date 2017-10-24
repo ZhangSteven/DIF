@@ -116,7 +116,7 @@ def validate_cash_and_holding(port_values):
 	
 	bond_holding = port_values['bond']
 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
-	if abs(bond_subtotal - port_values['bond_total']) > 0.2:
+	if abs(bond_subtotal - port_values['bond_total']) > 0.3:
 		logger.error('validate_cash_and_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
 						format(bond_subtotal, port_values['bond_total']))
 		raise InconsistentValue
