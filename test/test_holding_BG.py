@@ -202,42 +202,101 @@ class TestHoldingBG(unittest2.TestCase):
         self.assertEqual(len(equity_holding), 26)
         self.assertEqual(self.count_zero_holding_equity(equity_holding), 12)
 
-        bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM')
+        bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM', False)
         self.validate_bond_HTM(bond_holding_HTM_USD)
 
-        bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading')
+        bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading', False)
         self.validate_bond_trading(bond_holding_Trading_USD)
 
-        equity_holding_HKD = self.extract_equity_holding(equity_holding, 'HKD')
+        equity_holding_HKD = self.extract_equity_holding(equity_holding, 'HKD', False)
         self.validate_equity(equity_holding_HKD)
 
-        equity_holding_USD = self.extract_equity_holding(equity_holding, 'USD')
+        equity_holding_USD = self.extract_equity_holding(equity_holding, 'USD', False)
         self.validate_equity2(equity_holding_USD)
 
 
 
-    def extract_bond_holding(self, bond_holding, currency, accounting_treatment):
+    def test_read_holding2(self):
+        """
+        Read the CLM GNT 2017-10-25.xls, we get below holdings:
+
+        Bond        
+                        total
+        USD (HTM)       17       
+        USD (Trading)   11      
+        total           28
+                
+        Equity      
+                        total
+        HKD             21      
+        USD             6          
+        total           27
+        """
+        filename = os.path.join(get_current_path(), 'samples', 'CLM GNT 2017-10-25.xls')
+        wb = open_workbook(filename=filename)
+        ws = wb.sheet_by_name('Portfolio Val.')
+
+        port_values = {}
+        read_holding(ws, port_values)
+
+        bond_holding = port_values['bond']
+        # self.assertEqual(len(bond_holding), 28)
+
+        equity_holding = port_values['equity']
+        # self.assertEqual(len(equity_holding), 27)
+
+        bond_holding_HTM_USD = self.extract_bond_holding(bond_holding, 'USD', 'HTM', True)
+        self.assertEqual(len(bond_holding_HTM_USD), 17)
+
+        bond_holding_Trading_USD = self.extract_bond_holding(bond_holding, 'USD', 'Trading', True)
+        self.assertEqual(len(bond_holding_Trading_USD), 11)
+
+        equity_holding_HKD = self.extract_equity_holding(equity_holding, 'HKD', True)
+        self.assertEqual(len(equity_holding_HKD), 21)
+
+        equity_holding_USD = self.extract_equity_holding(equity_holding, 'USD', True)
+        self.assertEqual(len(equity_holding_USD), 6)
+
+
+
+
+    def extract_bond_holding(self, bond_holding, currency, accounting_treatment, non_zero):
         """
         Extract bond holding given its currency and accounting treatment.
+
+        If non-zero is False, then extract all positions, otherwise only extract the
+        non-zero positions.
         """
         holding = []
         for bond in bond_holding:
             if bond['currency'] == currency and \
                 bond['accounting_treatment'] == accounting_treatment:
-                holding.append(bond)
+
+                if non_zero:    # require bond par amount must be greater than zero
+                    if bond['par_amount'] > 0:
+                        holding.append(bond)
+                else:
+                    holding.append(bond)
 
         return holding
 
 
 
-    def extract_equity_holding(self, equity_holding, currency):
+    def extract_equity_holding(self, equity_holding, currency, non_zero):
         """
         Extract equity holding given its currency.
+
+        If non-zero is False, then extract all positions, otherwise only extract the
+        non-zero positions.
         """
         holding = []
         for equity in equity_holding:
             if equity['currency'] == currency:
-                holding.append(equity)
+                if non_zero:
+                    if equity['number_of_shares'] > 0:
+                        holding.append(equity)
+                else:
+                    holding.append(equity)
 
         return holding
 

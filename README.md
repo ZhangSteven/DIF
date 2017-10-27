@@ -35,6 +35,13 @@ To do
 
 
 +++++++++++++++++++++
+ver 0.25 @ 2017-10-27
++++++++++++++++++++++
+1. Changed validate_and_convert_field_value() function in open_holding.py. It assumed the dates (maturity, coupon starts, last trade) are always floating point numbers in Excel format, but sometimes it can be string (CLM GNT 2017-10-27.xls). The logic has been updated to accomodate that.
+
+
+
++++++++++++++++++++++
 ver 0.2401 @ 2017-10-24
 +++++++++++++++++++++
 1. Changed the validate_cash_and_holding() function, the threshold for bond total difference is changed from 0.2 to 0.3, because the DIF 2017-10-20 file has a bond total difference of 0.21.

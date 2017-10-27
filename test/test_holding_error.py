@@ -10,7 +10,7 @@ from DIF.utility import get_current_path
 from DIF.open_holding import read_holding, read_bond_fields, read_currency, \
                             get_datemode, read_equity_fields, \
                             read_sub_section, read_section, BadFieldName, \
-                            BadAssetClass
+                            BadAssetClass, InvalidDateValue
 
 class TestHoldingError(unittest2.TestCase):
 
@@ -120,10 +120,8 @@ class TestHoldingError(unittest2.TestCase):
         currency = 'USD'
         bond_holding = []
 
-        with self.assertRaisesRegexp(ValueError, 'bad field type: not a float'):
+        with self.assertRaises(InvalidDateValue):
             read_sub_section(ws, row, accounting_treatment, fields, asset_class, currency, bond_holding)
-
-        self.assertEqual(len(bond_holding), 6)  # the first 2 bond positions are OK
 
 
 

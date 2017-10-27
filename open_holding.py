@@ -26,6 +26,9 @@ class CurrencyNotFound(Exception):
 class SecurityIdNotFound(Exception):
 	pass
 
+class InvalidDateValue(Exception):
+	pass
+
 
 
 def read_holding(ws, port_values):
@@ -609,17 +612,16 @@ def validate_and_convert_field_value(field, cell_value):
 	# something must be wrong
 	if field in ['is_listed', 'listed_location', 'currency'] \
 		and not isinstance(cell_value, str):
-		logger.error('validate_field_value(): field {0} should be a string: {1}'.
+		logger.error('validate_and_convert_field_value(): field {0} should be a string: {1}'.
 						format(field, cell_value))
 		raise ValueError('bad field type: not a string')
 
 	elif field in ['fx_on_trade_day', 'coupon_rate', 'average_cost', \
 					'amortized_cost', 'price', 'book_cost', 'interest_bought', \
 					'amortized_value', 'market_value', 'accrued_interest', \
-					'amortized_gain_loss', 'market_gain_loss', 'fx_gain_loss', \
-					'coupon_start_date', 'maturity_date', 'last_trade_date'] \
+					'amortized_gain_loss', 'market_gain_loss', 'fx_gain_loss'] \
 		and not isinstance(cell_value, float):
-		logger.error('validate_field_value(): field {0} should be a float: {1}'.
+		logger.error('validate_and_convert_field_value(): field {0} should be a float: {1}'.
 						format(field, cell_value))
 		raise ValueError('bad field type: not a float')
 
@@ -631,13 +633,39 @@ def validate_and_convert_field_value(field, cell_value):
 			# treat an empty holding as zero
 			field_value = 0
 		else:
-			logger.error('validate_field_value(): field {0} should be a float or empty string: {1}'.
-						format(field, cell_value))
+			logger.error('validate_and_convert_field_value(): field {0} should be a \
+							float or empty string: {1}'.format(field, cell_value))
 			raise ValueError('bad field type: not a float or empty string')
 
 	# convert float to python datetime object when necessary
 	if field in ['coupon_start_date', 'maturity_date', 'last_trade_date']:
-		datemode = get_datemode()
-		field_value = xldate_as_datetime(cell_value, datemode)
+		try:
+			datemode = get_datemode()
+			field_value = xldate_as_datetime(cell_value, datemode)
+		except:
+			logger.warning('validate_and_convert_field_value(): convert {0} to excel date failed, value = {1}'.
+							format(field, cell_value))
+			
+			# treat it as a "dd/mm/yyyy" string and try again
+			field_value = convert_date_string(cell_value)
 
 	return field_value
+
+
+
+def convert_date_string(date_string):
+	"""
+	Convert a date_string object in the format of dd/mm/yyyy to a python
+	datetime object.
+	"""
+	try:
+		m = re.search('^(\d{2})/(\d{2})/(\d{4})', date_string)
+		if m is not None:
+			return datetime.datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+
+		logger.error('convert_date_string(): {0} is not a proper date value'.format(date_string))
+		raise InvalidDateValue()
+
+	except TypeError:
+		logger.error('convert_date_string(): {0} is not of type string'.format(date_string))
+		raise
