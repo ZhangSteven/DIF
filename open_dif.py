@@ -117,6 +117,7 @@ def validate_cash_and_holding(port_values):
 	bond_holding = port_values['bond']
 	bond_subtotal = calculate_bond_total(bond_holding, fx_table)
 	if abs(bond_subtotal - port_values['bond_total']) > 0.3:
+	# if abs(bond_subtotal - port_values['bond_total']) > 30000:
 		logger.error('validate_cash_and_holding(): calculated bond total {0} is inconsistent with that from file {1}'.
 						format(bond_subtotal, port_values['bond_total']))
 		raise InconsistentValue
@@ -225,6 +226,7 @@ def map_bank_to_custodian(bank_name):
 	"""
 	name_map = {
 		'Bank of China (Hong Kong) Ltd':'BOCHK',
+		'Bank of China Ltd. (Hong Kong)':'BOCHK',
 		'Luso International Banking Ltd.':'LUSO',
 		'Bank of China Ltd. (Macau Branch)':'BOCMACAU',
 		'JPMorgan Chase Bank, N.A.':'JPM',
