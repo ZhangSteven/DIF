@@ -105,3 +105,11 @@ def retrieve_or_create(port_values, key):
 		port_values[key] = holding
 
 	return holding
+
+
+
+def get_holding_fx(port_values):
+	if not 'holding_fx' in port_values:
+		port_values['holding_fx'] = {}
+
+	return port_values['holding_fx']

@@ -8,7 +8,7 @@ from xlrd import open_workbook
 from xlrd.xldate import xldate_as_datetime
 import xlrd
 import datetime, re
-from DIF.utility import get_datemode, retrieve_or_create
+from DIF.utility import get_datemode, retrieve_or_create, get_holding_fx
 import logging
 logger = logging.getLogger(__name__)
 
@@ -87,11 +87,13 @@ def read_holding(ws, port_values):
 			
 		# search the first column
 		cell_value = ws.cell_value(row, 0)
+		if isinstance(cell_value, str):
+			tokens = cell_value.split()
 
-		if isinstance(cell_value, str) and '.' in cell_value:
-			tokens = cell_value.split('.')
-			if len(tokens) > 1:
-				if str.strip(tokens[1]).startswith('Debt Securities'):	# bond
+			# if len(tokens) > 1:
+			if len(tokens) > 2:
+
+				if tokens[1]+tokens[2] == 'DebtSecurities':	# bond
 					logger.debug('bond: {0}'.format(cell_value))
 
 					currency = read_currency(cell_value)
@@ -101,7 +103,7 @@ def read_holding(ws, port_values):
 					n = read_section(ws, row, fields, 'bond', currency, port_values)
 					row = row + n
 
-				elif str.strip(tokens[1]).startswith('Equities'):		# equity
+				elif tokens[1] == 'Equities':		# equity
 					logger.debug('equity: {0}'.format(cell_value))
 
 					# equity_holding = retrieve_or_create(port_values, 'equity')
@@ -139,7 +141,7 @@ def read_currency(cell_value):
 
 	# The new implementation uses regular expression
 	# it will match currency symbol US$, USD, HKD, SGD
-	pattern = '-\s*(US\$|USD|HK\$|HKD|SGD|CNY)\s*\(.*\)'
+	pattern = '-\s*(US\$|USD|HK\$|HKD|SGD|CNY|EUR)\s*\(.*\)'
 	m = re.search(pattern, cell_value)
 	if m is None:	# pattern matching failed
 		logger.error('read_currency(): currency not found in string:{0}'.format(cell_value))
@@ -393,9 +395,12 @@ def read_section(ws, row, fields, asset_class, currency, port_values):
 	while start_of_sub_section(ws.cell_value(row+rows_read, 0)):
 		accounting_treatment = get_accounting_treatment(ws.cell_value(row+rows_read, 0))
 		fields = adjust_fields(port_values, fields, asset_class, accounting_treatment)
-		n = read_sub_section(ws, row+rows_read, accounting_treatment, 
-								fields, asset_class, currency, holding)
+		n, fx_rate = read_sub_section(ws, row+rows_read, accounting_treatment, 
+										fields, asset_class, currency, holding)
 		rows_read = rows_read + n
+		if fx_rate != 0:
+			# print('currency: {0}, fx: {1}'.format(currency, fx_rate))
+			get_holding_fx(port_values)[currency] = fx_rate
 
 	return rows_read
 
@@ -408,6 +413,8 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 	Return the number of rows read in this function
 	"""
 	rows_read = 1
+	end_of_section_reached = False
+	fx_rate = 0
 
 	while (row+rows_read < ws.nrows):
 		cell_value = ws.cell_value(row+rows_read, 0)
@@ -473,13 +480,40 @@ def read_sub_section(ws, row, accounting_treatment, fields, asset_class, currenc
 							format(security['currency'], security['accounting_treatment'], security['name']))
 			holding.append(security)
 
-		elif start_of_sub_section(cell_value) or end_of_section(cell_value):
+		# elif start_of_sub_section(cell_value) or end_of_section(cell_value):
+		elif start_of_sub_section(cell_value):
+			break
+
+		elif end_of_section(cell_value):
+			# print('end of section')
+			end_of_section_reached = True
 			break
 
 		rows_read = rows_read + 1	# move to next row
 		# end of while loop
 
-	return rows_read
+	if end_of_section_reached:
+		# FX rate is supposed to be at the next row after section ends
+		fx_rate = read_fx_rate(ws, row+rows_read+1)
+	
+	return rows_read, fx_rate
+
+
+
+def read_fx_rate(ws, row):
+	"""
+	Read the fx rate after the end of a section.
+	"""
+	cell_value = ws.cell_value(row, 0)
+	if cell_value.startswith('Exchange Rate'):
+		for i in range(1, 10):
+			cell_value = ws.cell_value(row, i)
+			if isinstance(cell_value, float):
+				return cell_value
+	else:
+		logger.error('read_fx_rate(): \"{0}\" is not FX rate cell'.format(cell_value))
+
+	return 0
 
 
 

@@ -35,6 +35,13 @@ To do
 
 
 +++++++++++++++++++++
+ver 0.26 @ 2018-3-20
++++++++++++++++++++++
+1. The code starts to read fx rate in holdings as well, because in "DIF 2018-03-13.xls" file, there is EUR holdings but no EUR cash account, therefore the code needs to extract fx rate in holdings so that it can be used in the total value validation.
+
+
+
++++++++++++++++++++++
 ver 0.25 @ 2017-10-27
 +++++++++++++++++++++
 1. Changed validate_and_convert_field_value() function in open_holding.py. It assumed the dates (maturity, coupon starts, last trade) are always floating point numbers in Excel format, but sometimes it can be string (CLM GNT 2017-10-27.xls). The logic has been updated to accomodate that.

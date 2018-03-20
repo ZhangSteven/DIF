@@ -73,3 +73,18 @@ class TestAll(unittest2.TestCase):
             open_dif(filename, port_values, get_current_path() + '\\samples')
         except:
             self.fail('something goes wrong.')
+
+
+
+    def test_read_all4(self):
+        """
+        With EUR currency in the holdings but not in cash accounts, so that we
+        must use fx rates from the holdings.
+        """
+        filename = get_current_path() + '\\samples\\CL Franklin DIF 2018-03-13.xls'
+        port_values = {}
+        
+        try:
+            open_dif(filename, port_values, get_current_path() + '\\samples')
+        except:
+            self.fail('something goes wrong.')

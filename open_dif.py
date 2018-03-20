@@ -10,7 +10,7 @@ from DIF.open_cash import read_cash
 from DIF.open_summary import read_portfolio_summary, get_portfolio_date
 from DIF.open_holding import read_holding
 from DIF.open_expense import read_expense
-from DIF.utility import get_input_directory
+from DIF.utility import get_input_directory, get_holding_fx
 from investment_lookup.id_lookup import get_investment_Ids
 import csv, os
 import logging
@@ -146,18 +146,45 @@ def calculate_bond_total(bond_holding, fx_table):
 	capital repayment needs to be taken into account.
 	"""
 	total = 0
+	local_currency_total = {}
+
 	for bond in bond_holding:
 		fx = fx_table[bond['currency']]
 		amount = bond['par_amount']/100
 		if amount == 0:
 			continue
 
-		try:
-			local_currency_total = amount * bond['price']
-		except KeyError:	# 'price' is not there, then it must be HTM
-			local_currency_total = amount * bond['amortized_cost']
+		# try:
+		# 	local_currency_total = amount * bond['price']
+		# except KeyError:	# 'price' is not there, then it must be HTM
+		# 	local_currency_total = amount * bond['amortized_cost']
 
-		total = total + fx*(local_currency_total + bond['accrued_interest'])
+		# total = total + fx*(local_currency_total + bond['accrued_interest'])
+
+		# Instead of calculating the bond total directly, we divide the total
+		# into (currency, accounting treatment) sub totals so it's easier to
+		# debug.
+		if 'price' in bond:
+			bond_type = (bond['currency'], 'Trading')
+		else:
+			bond_type = (bond['currency'], 'HTM')
+
+		if not bond_type in local_currency_total:
+			local_currency_total[bond_type] = 0
+
+		if bond_type[1] == 'Trading':
+			local_currency_total[bond_type] = local_currency_total[bond_type] + \
+												amount*bond['price'] + \
+												bond['accrued_interest']
+		else:
+			local_currency_total[bond_type] = local_currency_total[bond_type] + \
+												amount*bond['amortized_cost'] + \
+												bond['accrued_interest']
+	# end of for loop.
+
+	for bond_type in local_currency_total:
+		logger.info('{0} total is {1}'.format(bond_type, local_currency_total[bond_type]))
+		total = total + fx_table[bond_type[0]] * local_currency_total[bond_type]
 
 	return total
 
@@ -186,10 +213,21 @@ def calculate_equity_total(equity_holding, fx_table):
 
 
 def retrieve_fx(port_values):
-	fx_table = {}
+	"""
+	Combine FX rates from holdings and cash accounts, if FX rate exists both
+	in cash accounts and holdings, then use the holdings FX rate. Otherwise
+	update the holdings FX rate.
+	"""
+	# fx_table = {}
+	# cash_accounts = port_values['cash_accounts']
+	# for cash_account in cash_accounts:
+	# 	fx_table[cash_account['currency']] = cash_account['fx_rate']
+
+	fx_table = get_holding_fx(port_values)
 	cash_accounts = port_values['cash_accounts']
 	for cash_account in cash_accounts:
-		fx_table[cash_account['currency']] = cash_account['fx_rate']
+		if not cash_account['currency'] in fx_table:
+			fx_table[cash_account['currency']] = cash_account['fx_rate']
 
 	return fx_table
 
