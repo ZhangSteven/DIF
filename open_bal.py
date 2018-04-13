@@ -1,8 +1,13 @@
 # coding=utf-8
 # 
-# Parse the Macau balanced fund and Macau guarantee fund excel files 
-# from trustee, read the necessary fields and save into a csv file for
-# reconciliation with Advent Geneva.
+# Parse the below fund excel files from trustee:
+# 
+# 	1. Macau balanced fund
+# 	2. Macau guarantee fund
+# 	3. Macau grouth fund 
+# 
+# read the necessary fields and save into a csv file for reconciliation 
+# with Advent Geneva.
 #
 
 from xlrd import open_workbook
@@ -121,6 +126,8 @@ def get_fund_id(name_string):
 		return '30004'
 	elif fund_name.startswith('CHINA LIFE MACAU BRANCH GUARANTEE'):
 		return '30003'
+	elif fund_name.startswith('CHINA LIFE MACAU BRANCH GROWTH'):
+		return '30005'
 	else:
 		logger.error('get_fund_id(): failed to map to fund id: {0}'.format(fund_name))
 		raise FundIdNotFound()
@@ -134,7 +141,8 @@ def get_position_custodian(portfolio_id):
 	"""
 	c_map = {
 		'30003':'ICBCMACAU',
-		'30004':'ICBCMACAU'
+		'30004':'ICBCMACAU',
+		'30005':'ICBCMACAU'
 	}
 	try:
 		return c_map[portfolio_id]
