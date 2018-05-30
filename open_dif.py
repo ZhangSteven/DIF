@@ -106,11 +106,13 @@ def validate_cash_and_holding(port_values):
 	Maybe this is due to the rounding of actual number before they are input 
 	to excel.
 	"""
-	cash_total = calculate_cash_total(port_values)
-	if abs(cash_total - port_values['cash_total']) > 0.01:
-		logger.error('validate_cash_and_holding(): calculated cash total {0} is inconsistent with that from file {1}'.
-						format(cash_total, port_values['cash_total']))
-		raise InconsistentValue
+	# disable it for the moment. Because now cash includes balance from
+	# the futures account, but futures account's cash is not read yet.
+	# cash_total = calculate_cash_total(port_values)
+	# if abs(cash_total - port_values['cash_total']) > 0.01:
+	# 	logger.error('validate_cash_and_holding(): calculated cash total {0} is inconsistent with that from file {1}'.
+	# 					format(cash_total, port_values['cash_total']))
+	# 	raise InconsistentValue
 
 	fx_table = retrieve_fx(port_values)
 	
